@@ -1,0 +1,30 @@
+{
+    "name": "mmcChatExtension",
+    "description": "MMC Chat Controller",
+    "version": "1.0",
+    "manifest_version": 3,
+    "permissions": [
+        "activeTab",
+        "storage",
+        "unlimitedStorage",
+        "tabs",
+        "cookies"
+    ],
+    "action": {
+        "default_popup": "popup.html"
+    },
+    "content_scripts":[
+        {
+            "matches": [
+                "https://m.facebook.com/*"
+            ],
+            "js": ["script.js"],
+            "css": ["style.css"],
+            "run_at": "document_idle"
+        }
+    ],
+    "background": {
+        "service_worker": "script.js",
+        "type": "module"
+    }
+}
