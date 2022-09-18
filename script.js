@@ -383,6 +383,11 @@ const fixedData = {
             SingleMessages : '.msg [data-sigil="message-text"]',
             messageDataHolder: ':scope > span,.messageAttachments',
             neutralMessages : '.msg .fcg',
+        },
+        sendUnsentMessage:{
+            sold: `.${'_a58 _9_7 _2rgt _1j-g _2rgt'.split(' ').join('.')}`,
+            messageInput: 'form [name="message"]',
+            sendButton: 'button[type="submit"][value="Send"]',
         }
     },
     limits:{
@@ -414,10 +419,21 @@ const fixedData = {
     },
 };
 const contentScripts = {
-    accountInfo : ()=>{
-        const infos = JSON.parse(document.body.textContent.match(/{"ACCOUNT_ID":.+?}/)[0]);
-        const id = infos.ACCOUNT_ID;
-        const name = infos.NAME;
+    accountInfo : async()=>{
+        const accountInfoDB = new ChromeStorage('accountInfo');
+        let id = '';
+        let name = '';
+        try{
+            const infos = JSON.parse(document.body.textContent.match(/{"ACCOUNT_ID":.+?}/)[0]);
+            id = infos.ACCOUNT_ID;
+            name = infos.NAME;
+            await accountInfoDB.SET({id, name});
+        }catch(e){
+            const infos = await accountInfoDB.GET();
+            id = infos.id;
+            name = infos.name;
+        }
+
         return {id, name};
     },
     isUserLoggedIn: ()=>{
@@ -526,13 +542,21 @@ const contentScripts = {
             }
         }
         if(await isRedirectionAllowed(message)){
-            const redirectButton = document.createElement('button');
-            redirectButton.innerText = 'Redirect';
-            redirectButton.onclick = ()=>{
+            const metaInformationDB = new ChromeStorage('metaInformation');
+            const metaInformation = await metaInformationDB.GET();
+            const debugModeSwitch = metaInformation.debugModeSwitch;
+            if(debugModeSwitch){
+                const redirectButton = document.createElement('button');
+                redirectButton.innerText = 'Redirect';
+                redirectButton.onclick = ()=>{
+                    window.location.href = url;
+                }
+                const consoleBoard = document.getElementById(fixedData.workingSelectors.content.console);
+                consoleBoard.appendChild(redirectButton);
+            }else{
                 window.location.href = url;
             }
-            const consoleBoard = document.getElementById(fixedData.workingSelectors.content.console);
-            consoleBoard.appendChild(redirectButton);
+            
         }else{
             const messages = await redirectionMessagesDB.GET();
             for(let i=0;i<messages.length;i++){
@@ -558,7 +582,7 @@ const contentScripts = {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({fb_message_id})
+            body: JSON.stringify({fb_message_id: `${fb_message_id}`})
         });
         const itemIdData = await itemIdDataJSON.json();
         return itemIdData.item_id;
@@ -594,12 +618,21 @@ const contentScripts = {
                 const itemDataJSON = await mondayFetch(query);
                 const itemData = await itemDataJSON.json();
             }
+            const metaInformationDB = new ChromeStorage('metaInformation');
+            const metaInfromation = await metaInformationDB.GET();
+            const serverLinkGoneUpdate = await fetch(`${metaInfromation.domain}/extension/serverLinkGoneUpdate`,{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({item_id: `${item_id}`})
+            });
         }
     },
-    readCurrentMessage: ()=>{
+    readCurrentMessage: async ()=>{
         contentScripts.showDataOnConsole('Reading current message');
         const messages = document.querySelectorAll(fixedData.workingSelectors.readMessage.SingleMessages);
-        const accountInfo = contentScripts.accountInfo();
+        const accountInfo = await contentScripts.accountInfo();
         const messageData = [];
         for(let i=0;i<messages.length;i++){
             const message = messages[i];
@@ -695,7 +728,7 @@ const contentScripts = {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({fb_post_id})
+            body: JSON.stringify({fb_post_id: `${fb_post_id}`})
         });
         const itemLastMessageData = await itemLastMessageDataJSON.json();
         return itemLastMessageData.message;
@@ -708,7 +741,7 @@ const contentScripts = {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({fb_post_id})
+            body: JSON.stringify({fb_post_id: `${fb_post_id}`})
         });
         const itemIdData = await itemIdDataJSON.json();
         return itemIdData.item_id;
@@ -755,7 +788,61 @@ const contentScripts = {
         return (americanHour>=messagingStartHour && americanHour<=messagingEndHour);
     },
     getUnsentMessagePostIds : async ()=>{
-
+        const fb_id = (await contentScripts.accountInfo()).id;
+        const metaInformationDB = new ChromeStorage('metaInformation');
+        const metaInfromation = await metaInformationDB.GET();
+        const domain = metaInfromation.domain;
+        const unsentMessagesDataJSON = await fetch(`${domain}/extension/getUnsentMessagePostIds`,{
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({fb_id: `${fb_id}`})
+        });
+        const unsentMessagesData = await unsentMessagesDataJSON.json();
+        return unsentMessagesData.post_ids;
+    },
+    getUnsentMessagesByPostId: async (fb_post_id)=>{
+        const metaInformationDB = new ChromeStorage('metaInformation');
+        const metaInfromation = await metaInformationDB.GET();
+        const domain = metaInfromation.domain;
+        const unsentMessagesDataJSON = await fetch(`${domain}/extension/getUnsentMessagesByPostId`,{
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({fb_post_id: `${fb_post_id}`})
+        });
+        const unsentMessagesData = await unsentMessagesDataJSON.json();
+        return unsentMessagesData.messages;
+    },
+    isValidMessageInSellerMessage: ()=>{
+        // "left the group"
+        // "Sold"
+        // "removed the item from Marketplace"
+        const error = document.body.innerText.includes('Sorry, something went wrong');
+        const removed = document.body.innerText.includes('removed the item from Marketplace');
+        const soldHolder = document.querySelector(fixedData.workingSelectors.sendUnsentMessage.sold);
+        let sold = false;
+        if(soldHolder){
+            sold = soldHolder.innerText.includes('Sold');
+        }
+        console.log(`error: ${error}, removed: ${removed}, sold: ${sold}`);
+        return !(error || removed || sold);
+    },
+    markMessageAsSent: async ( messageId)=>{
+        const metaInformationDB = new ChromeStorage('metaInformation');
+        const metaInfromation = await metaInformationDB.GET();
+        const domain = metaInfromation.domain;
+        const markMessageAsSentJSON = await fetch(`${domain}/extension/markMessageAsSent`,{
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({message_id:`${messageId}`})
+        });
+        const markMessageAsSent = await markMessageAsSentJSON.json();
+        return markMessageAsSent;
     },
     waitWithVisual: async (waitingTime)=>{
         waitingTime = parseInt(waitingTime);
@@ -782,8 +869,8 @@ const contentScripts = {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    fb_id: contentScripts.accountInfo().id,
-                    fb_user_name: contentScripts.accountInfo().name
+                    fb_id: `${(await contentScripts.accountInfo()).id}`,
+                    fb_user_name: `${(await contentScripts.accountInfo()).name}`
                 })
             });
             if(newPostJSON.status==200){
@@ -851,10 +938,10 @@ const contentScripts = {
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                                item_id: sendNewSellerMessage.item_id,
-                                fb_post_id: sendNewSellerMessage.fb_post_id,
-                                fb_id: contentScripts.accountInfo().id,
-                                fb_user_name: contentScripts.accountInfo().name
+                                item_id: `${sendNewSellerMessage.item_id}`,
+                                fb_post_id: `${sendNewSellerMessage.fb_post_id}`,
+                                fb_id: `${(await contentScripts.accountInfo()).id}`,
+                                fb_user_name: `${(await contentScripts.accountInfo()).name}`
                             })
                         });
                         if(saveFirstMessageActionJSON.status==200){
@@ -922,7 +1009,7 @@ const contentScripts = {
                 const processUrlAndContinue = async(url)=>{
                     // get digits from url
                     const postId = url.match(/\d+/g).map(Number)[0];
-                    sendNewSellerMessage.fb_post_id = postId;
+                    sendNewSellerMessage.fb_post_id = `${postId}`;
                     await sendNewSellerMessageDB.SET(sendNewSellerMessage);
                     contentScripts.pageRedirection(`${fixedData.workingUrls.itemSuffix}${postId}`,'Redirecting to post page');
                 }
@@ -1058,11 +1145,11 @@ const contentScripts = {
                 const metaInformationDB = new ChromeStorage('metaInformation');
                 const metaInfromation = await metaInformationDB.GET();
                 const postUrl = document.querySelector(fixedData.workingSelectors.readMessage.postUrl);
-                const itemData = {fb_message_id:readUnseenMessage[0]};
+                const itemData = {fb_message_id:`${readUnseenMessage[0]}`};
                 if(postUrl){
                     const postId = postUrl.href.match(/\d+/g)[0];
-                    itemData.fb_post_id = postId;
-                    itemData.fb_id = contentScripts.accountInfo().id;
+                    itemData.fb_post_id = `${postId}`;
+                    itemData.fb_id = `${(await contentScripts.accountInfo()).id}`;
                     const isValidMessageIdJSON = await fetch(`${metaInfromation.domain}/extension/isValidMessageId`,{
                         method: 'POST',
                         headers: {
@@ -1078,13 +1165,13 @@ const contentScripts = {
                             const isMessageValid = contentScripts.isCurrentMessageValid();
                             if(isMessageValid){
                                 contentScripts.showDataOnConsole('message is valid to read or write');
-                                const messageDatas = contentScripts.readCurrentMessage();
+                                const messageDatas = await contentScripts.readCurrentMessage();
                                 const lastMessageFromServer = await contentScripts.lastMessageOnServerByPostId(itemData.fb_post_id);
                                 const item_id = await contentScripts.itemIdByPostId(itemData.fb_post_id);
                                 let newMessageDatas = [];
                                 for(let i = messageDatas.length-1;i>=0;i--){
                                     const messageData = messageDatas[i];
-                                    messageData.item_id = item_id;
+                                    messageData.item_id = `${item_id}`;
                                     const message = messageData.message;
                                     if(message==lastMessageFromServer){
                                         break;
@@ -1120,18 +1207,69 @@ const contentScripts = {
         const workingStepDB = new ChromeStorage('workingStep');
         const metaInformationDB = new ChromeStorage('metaInformation');
         const sendUnsentMessageDB = new ChromeStorage('sendUnsentMessage');
+        let sendUnsentMessage = await sendUnsentMessageDB.GET();
         const metaInfromation = await metaInformationDB.GET();
-        const fb_id = contentScripts.accountInfo().id;
-        if(await sendUnsentMessageDB.GET()==null){
-            console.log('getting unsent messages');
+        // const fb_id = (await contentScripts.accountInfo()).id;
+        const afterSendingMessage = async ()=>{
+            sendUnsentMessage.shift();
+            if(sendUnsentMessage.length==0){
+                await workingStepDB.SET(null);
+                await sendUnsentMessageDB.SET(null);
+                contentScripts.pageRedirection(fixedData.workingUrls.home,'start sending new message');
+            }else{
+                await sendUnsentMessageDB.SET(sendUnsentMessage);
+                const fb_post_id = sendUnsentMessage[0];
+                contentScripts.pageRedirection(`${fixedData.workingUrls.sellerMessageSuffix}${fb_post_id}/`,'Redirecting to seller message page');
+            }
         }
-        
+        if(sendUnsentMessage==null){
+            sendUnsentMessage = await contentScripts.getUnsentMessagePostIds();
+            await sendUnsentMessageDB.SET(sendUnsentMessage);
+        }
+        if(sendUnsentMessage.length!=0){
+            const fb_post_id = sendUnsentMessage[0];
+            if(window.location.href!=`${fixedData.workingUrls.sellerMessageSuffix}${fb_post_id}/`){
+                contentScripts.pageRedirection(`${fixedData.workingUrls.sellerMessageSuffix}${fb_post_id}/`,'Redirecting to seller message page');
+            }else{
+                const validTosendMessage = contentScripts.isValidMessageInSellerMessage();
+                if(validTosendMessage){
+                    const messages = await contentScripts.getUnsentMessagesByPostId(fb_post_id);
+                    if(messages.length!=0){
+                        for(let i=0;i<messages.length;i++){
+                            const messageData = messages[i];
+                            const message = messageData.message;
+                            if(document.body.innerText.includes(message)){
+                                await contentScripts.markMessageAsSent(messageData.id);
+                                if(i==messages.length-1){
+                                    await afterSendingMessage();
+                                }
+                            }else{
+                                await essentials.sleep(5000);
+                                const messageInput = document.querySelector(fixedData.workingSelectors.sendUnsentMessage.messageInput);
+                                messageInput.value = message;
+                                const sendButton = document.querySelector(fixedData.workingSelectors.sendUnsentMessage.sendButton);
+                                sendButton.click();
+                                break;
+                            }
+                        }
+                        contentScripts.showDataOnConsole('program should not be stucked here');
+                    }else{
+                        await afterSendingMessage();
+                    }
+                    
+                }else{
+                    const item_id = await contentScripts.itemIdByPostId(fb_post_id);
+                    await contentScripts.markItemAsLinkGone(item_id);
+                }
+                
+            }
 
-
-        // await workingStepDB.SET(null);
-        // contentScripts.pageRedirection(fixedData.workingUrls.home,'start sending new message');
-        // const fb_id = contentScripts.accountInfo().id;
-        // await contentScripts.waitWithVisual(100);
+        }else{
+            console.log('redirecting to home to start sending new message');
+            await workingStepDB.SET(null);
+            await sendUnsentMessageDB.SET(null);
+            contentScripts.pageRedirection(fixedData.workingUrls.home,'start sending new message');
+        }
     },
     
 };
@@ -1262,76 +1400,11 @@ const contentSetup = async()=>{
         }
     }
 })();
-// named the group
-// changed the group photo
-// removed the item from Marketplace
-// sold
-// changed the listing title
-// reduced the price
+
 
 
 // license plate
 // https://www.faxvin.com/license-plate-lookup/result?plate=959ECL&state=IN
 // https://vincheck.info/prepare-license-search.php?state=IN&plate=959ECL
 // https://www.autocheck.com/consumer-api/meta/v1/summary/plate/959ECL/state/IN -- https://www.autocheck.com/vehiclehistory/search-by-license-plate
-// https://www.vinfreecheck.com/free-license-plate-lookup
-
-
-
-
-// if(readUnseenMessage.unknownIds.length>0){
-//     const unknownId = readUnseenMessage.unknownIds[0];
-//     if(window.location.href != `${fixedData.workingUrls.unknownMessageSuffix}${unknownId}`){
-//         contentScripts.pageRedirection(`${fixedData.workingUrls.unknownMessageSuffix}${unknownId}`,`Redirecting to unknown message ${unknownId}`);
-//     }else{
-//         const postUrl = document.querySelector(fixedData.workingSelectors.readMessage.postUrl);
-//         const postId = postUrl.href.match(/\d+/g)[0];
-//         readUnseenMessage.unknownIds.shift();
-//         readUnseenMessage.postIds.push(postId);
-//         await readUnseenMessageDB.SET(readUnseenMessage);
-//         if(readUnseenMessage.unknownIds.length>0){
-//             contentScripts.pageRedirection(`${fixedData.workingUrls.unknownMessageSuffix}${readUnseenMessage.unknownIds[0]}`,`Redirecting to unknown message ${readUnseenMessage.unknownIds[0]}`);
-//         }else{
-//             if(readUnseenMessage.postIds.length>0){
-//                 contentScripts.pageRedirection(`${fixedData.workingUrls.sellerMessageSuffix}${readUnseenMessage.postIds[0]}`,`Redirecting to post ${readUnseenMessage.postIds[0]}`);
-//             }else{
-//                 await workingStepDB.SET('sentUnsentMessage');
-//                 await readUnseenMessageDB.SET(null);
-//                 contentScripts.pageRedirection(fixedData.workingUrls.home,'Starting sending unsent message');
-//             }
-//         }
-//     }
-
-// }else 
-
-
-
-// {
-//     contentScripts.showDataOnConsole(`Unseen Messages: ${unseenMessageIds.length}`);
-//     const metaInformation = await new ChromeStorage('metaInformation').GET();
-//     const domain = metaInformation.domain;
-//     try{
-//         const unseenMessageResultJSON = await fetch(`${domain}/extension/unseenMessageIDs`,{
-//             method: 'POST',
-//             headers: {
-//                 'Content-Type': 'application/json'
-//             },
-//             body: JSON.stringify({
-//                 ids: unseenMessageIds,
-//                 fb_id: contentScripts.accountInfo().id
-//             })
-//         });
-//         if(unseenMessageResultJSON.status==200){
-//             const unseenMessageResult = await unseenMessageResultJSON.json();
-//             const workingStepDB = new ChromeStorage('workingStep');
-//             const readUnseenMessageDB = new ChromeStorage('readUnseenMessage');
-//             await readUnseenMessageDB.SET(unseenMessageResult);
-//             await workingStepDB.SET('readUnseenMessage');
-//             contentScripts.pageRedirection(fixedData.workingUrls.home,'Start Reading Unseen Messages');
-//         }else{
-//             contentScripts.showDataOnConsole('server error sending unseen message ids');
-//         }
-//     }catch(e){
-//         contentScripts.showDataOnConsole('server error sending unseen message ids');
-//     }
-// }
+// https://www.vinfreecheck.com/free-license-plate-lookup`
