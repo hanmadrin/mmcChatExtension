@@ -289,6 +289,14 @@ const fixedData = {
             interactive: true,
             requiredToStart: true,
         },
+        skipSendingNewMessages:{
+            title: 'Skip Sending New Messages',
+            type: 'checkbox',
+            defaultValue: false,
+            point: 'checked',
+            interactive: true,
+            requiredToStart: true,
+        },
         debugModeSwitch:{
             title: 'Debug Switch',
             type: 'checkbox',
@@ -357,7 +365,7 @@ const fixedData = {
     },
     workingUrls:{
         messages: 'https://m.facebook.com/messages/?folder=unread',
-        home: 'https://m.facebook.com/',
+        home: 'https://m.facebook.com/?tbua=1',
         itemSuffix: 'https://m.facebook.com/marketplace/item/',
         unknownMessageSuffix: 'https://m.facebook.com/messages/read/?tid=cid.g.',
         sellerMessageSuffix: 'https://m.facebook.com/marketplace/message_seller/',
@@ -391,8 +399,8 @@ const fixedData = {
         }
     },
     limits:{
-        loadMessages: 5,
-        lastUnreadMesaage: (86400*5),
+        loadMessages: 10,
+        lastUnreadMesaage: (86400),
     },
     mondayFetch:{
         appraisalCounterBoard : 1255820475,
@@ -403,6 +411,7 @@ const fixedData = {
                 person : 'person',
                 url: 'text7',
                 status: 'status',
+                date: 'date4'
             },
             appraisalCounterBoard:{
                 status: 'status',
@@ -617,9 +626,19 @@ const contentScripts = {
                 `;
                 const itemDataJSON = await mondayFetch(query);
                 const itemData = await itemDataJSON.json();
+                const query1 = `
+                    mutation {
+                        archive_item(item_id: ${item_id}) {
+                            id
+                        }
+                    }
+                `;
+                const itemDataJSON1 = await mondayFetch(query1);
+                const itemData1 = await itemDataJSON1.json();
             }
             const metaInformationDB = new ChromeStorage('metaInformation');
             const metaInfromation = await metaInformationDB.GET();
+            
             const serverLinkGoneUpdate = await fetch(`${metaInfromation.domain}/extension/serverLinkGoneUpdate`,{
                 method: 'POST',
                 headers: {
@@ -631,16 +650,17 @@ const contentScripts = {
     },
     readCurrentMessage: async ()=>{
         contentScripts.showDataOnConsole('Reading current message');
-        const messages = document.querySelectorAll(fixedData.workingSelectors.readMessage.SingleMessages);
         const accountInfo = await contentScripts.accountInfo();
         const messageData = [];
+        let messages = document.querySelectorAll(fixedData.workingSelectors.readMessage.SingleMessages);
         for(let i=0;i<messages.length;i++){
-            const message = messages[i];
+            messages = document.querySelectorAll(fixedData.workingSelectors.readMessage.SingleMessages);
+            let message = messages[i];
             const messageInfo = JSON.parse(message.getAttribute('data-store'));
             const timestamp = messageInfo.timestamp;
             const sent_from = (messageInfo.author==accountInfo.id || messageInfo.author==accountInfo.name)?'me':'seller';
             const text = message.querySelector(':scope > span');
-            const attachment = message.querySelector(':scope > div');
+            let attachment = message.querySelector(':scope > div');
             if(text.children.length!=0){
                 const textData = {
                     type: 'text',
@@ -653,9 +673,17 @@ const contentScripts = {
                 messageData.push(textData);
             }
             if(attachment.children.length !=0){
-                const images = attachment.querySelectorAll('img,i');
-                for(let i=0;i<images.length;i++){
-                    const image = images[i];
+                messages = document.querySelectorAll(fixedData.workingSelectors.readMessage.SingleMessages);
+                message = messages[i];
+                attachment = message.querySelector(':scope > div');
+                let images = attachment.querySelectorAll('img,i');
+                for(let j=0;j<images.length;j++){
+                    await essentials.sleep(1000);
+                    messages = document.querySelectorAll(fixedData.workingSelectors.readMessage.SingleMessages);
+                    message = messages[i];
+                    attachment = message.querySelector(':scope > div');
+                    images = attachment.querySelectorAll('img,i');
+                    const image = images[j];
                     const tagName = image.tagName.toLowerCase();
                     let imageSrc = '';
                     if(tagName=='img'){
@@ -663,19 +691,87 @@ const contentScripts = {
                     }else{
                         imageSrc = image.style.backgroundImage.replace('url(','').replace(')','').replace(/\"/gi, "");
                     }
+                    console.log(image);
+                    const attachmentLink = image.closest('.msg').querySelector('a');
+                    let url = '';
+                    let fileType = '';
+                    if(attachmentLink){
+                        const onpageUrl = attachmentLink.getAttribute('href');
+                        if(onpageUrl.includes("https://") && !onpageUrl.includes("https://facebook.com")){
+                            url = onpageUrl;
+                            fileType = 'link';
+                        }else{
+                            url = await contentScripts.retrieveAttachementUrl(document.querySelector(`[href="${onpageUrl}"]`));
+                            fileType = contentScripts.getFileTypeFromUrl(url);
+                        }
+                    }else{
+                        url = imageSrc;
+                        fileType = contentScripts.getFileTypeFromUrl(url);
+                    }
+                    
+                    console.log(imageSrc)
                     const imageData = {
-                        type: 'image',
+                        type: fileType,
                         sent_from,
-                        message: imageSrc,
+                        message: url,
                         timestamp,
                         fb_id: accountInfo.id,
                         status: 'done'
                     }
                     messageData.push(imageData);
+
+                    // const imageData = {
+                    //     type: 'image',
+                    //     sent_from,
+                    //     message: imageSrc,
+                    //     timestamp,
+                    //     fb_id: accountInfo.id,
+                    //     status: 'done'
+                    // }
+                    // messageData.push(imageData);
                 }
             }
         }
         return messageData;
+    },
+    getFileTypeFromUrl: (url)=>{
+        url = new URL(url);
+        const path = url.pathname;
+        const urlData = path.split('.');
+        const type = urlData[urlData.length-1];
+        const imageTypes = ['jpg','jpeg','png','gif','bmp','svg','webp'];
+        if(imageTypes.includes(type)){
+            return 'image';
+        }else{
+            return 'file';
+        }
+    },
+    retrieveAttachementUrl: async (image)=>{
+        image.click();
+        let url = '';
+        while(true){
+            await essentials.sleep(1000);
+            contentScripts.showDataOnConsole('Waiting for image to load');
+            if(window.location.href.includes('https://m.facebook.com/messages/attachment_preview') || window.location.href.includes('https://m.facebook.com/messages/attachment_confirm')){
+                const attachmentLinks = [...document.querySelectorAll('a')].filter((a)=>a.innerText=='Download'||a.innerText=='Open');
+                const closeLinks = [...document.querySelectorAll('a')].filter((a)=>a.innerText=='Close'||a.innerText=='Cancel');
+                if(attachmentLinks.length==1 && closeLinks.length!=0){
+                    url = attachmentLinks[0].href;
+                    closeLinks[closeLinks.length-1].click();
+                    break;
+                }
+            }else{
+                contentScripts.showDataOnConsole('Waiting for page to load');
+            }
+        }
+        while(true){
+            await essentials.sleep(1000);
+            contentScripts.showDataOnConsole('Waiting for image to close');
+            if(window.location.href.includes('https://m.facebook.com/messages/read/')){
+                break;
+            }
+        }
+        return url;
     },
     sendMessagesToServer: async (messageData)=>{
         const metaInformationDB = new ChromeStorage('metaInformation');
@@ -844,15 +940,40 @@ const contentScripts = {
         const markMessageAsSent = await markMessageAsSentJSON.json();
         return markMessageAsSent;
     },
+    markItemMessagesdone: async (itemId)=>{
+        const metaInformationDB = new ChromeStorage('metaInformation');
+        const metaInfromation = await metaInformationDB.GET();
+        const domain = metaInfromation.domain;
+        const markItemMessagesdoneJSON = await fetch(`${domain}/extension/markItemMessagesdone`,{
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({item_id:`${itemId}`})
+        });
+        const markItemMessagesdone = await markItemMessagesdoneJSON.json();
+        return markItemMessagesdone;
+    },
     waitWithVisual: async (waitingTime)=>{
         waitingTime = parseInt(waitingTime);
+        let stopTimer = false;
         const timer = document.createElement('div');
         timer.classList.add('font-header');
         const consoleBoard = document.getElementById(fixedData.workingSelectors.content.console);
         consoleBoard.replaceChildren(timer);
+        const stopButton = document.createElement('button');
+        stopButton.innerText = 'Stop';
+        stopButton.classList.add('btn','btn-danger','btn-sm');
+        stopButton.addEventListener('click',()=>{
+            stopTimer = true;
+        }); 
+        consoleBoard.appendChild(stopButton);
         for(let i = waitingTime;i>=0;i--){
             timer.innerText = `Waiting for ${i} seconds`;
             await essentials.sleep(1000);
+            if(stopTimer){
+                break;
+            }
         }
     },
     sendNewSellerMessage: async ()=>{
@@ -860,8 +981,15 @@ const contentScripts = {
         const sendNewSellerMessage = await sendNewSellerMessageDB.GET();
         const workingStepDB = new ChromeStorage('workingStep');
         const metaInformationDB = new ChromeStorage('metaInformation');
+        const metaInformation = await new ChromeStorage('metaInformation').GET();
+        const skipSendingNewMessages = metaInformation.skipSendingNewMessages;
+        if(skipSendingNewMessages){
+            await sendNewSellerMessageDB.SET(null);
+            await workingStepDB.SET('collectUnseenMessage');
+            contentScripts.pageRedirection(fixedData.workingUrls.messages,'skipping sending new messages');
+            return;
+        }
         if(sendNewSellerMessage==null){
-            const metaInformation = await new ChromeStorage('metaInformation').GET();
             const domain = metaInformation.domain;
             const newPostJSON = await fetch(`${domain}/extension/newPostId`,{
                 method: 'POST',
@@ -883,6 +1011,7 @@ const contentScripts = {
             }
             else{
                 contentScripts.showDataOnConsole('No raw Item to work With');
+                await contentScripts.waitWithVisual(60*5);
                 await sendNewSellerMessageDB.SET(null);
                 await workingStepDB.SET('collectUnseenMessage');               
                 contentScripts.pageRedirection(fixedData.workingUrls.messages,'No raw Item to work With');
@@ -891,28 +1020,30 @@ const contentScripts = {
             if(sendNewSellerMessage.fb_post_id){
                 contentScripts.showDataOnConsole('fb post id collected');
                 await essentials.sleep(5000); 
-                const markAsLinkGone = async ()=>{
-                    contentScripts.showDataOnConsole('marking as "Link Gone"');
-                    const query = `
-                        mutation {
-                            change_simple_column_value(
-                                item_id: ${sendNewSellerMessage.item_id}, 
-                                board_id: ${fixedData.mondayFetch.borEffortBoardId}, 
-                                column_id: "${fixedData.mondayFetch.columnValuesIds.borEffortBoard.status}", 
-                                value: "Link Gone") {
-                                id
-                            }
-                        }
-                    `;
-                    try{
-                        const LinkGoneDataJSON = await mondayFetch(query);
-                        const LinkGoneData = await LinkGoneDataJSON.json();
-                        await sendNewSellerMessageDB.SET(null);               
-                        contentScripts.pageRedirection(fixedData.workingUrls.home,'Link gone getting new one');
-                    }catch(e){
-                        contentScripts.showDataOnConsole('Error marking as "Link Gone"');
-                    }
-                }
+                // const markAsLinkGone = async ()=>{
+                //     contentScripts.showDataOnConsole('marking as "Link Gone"');
+                //     const query1 = `
+                //         mutation {
+                //             change_simple_column_value(
+                //                 item_id: ${sendNewSellerMessage.item_id}, 
+                //                 board_id: ${fixedData.mondayFetch.borEffortBoardId}, 
+                //                 column_id: "${fixedData.mondayFetch.columnValuesIds.borEffortBoard.status}", 
+                //                 value: "Link Gone") {
+                //                 id
+                //             }
+                //         }
+                //     `;
+                //     try{
+                //         const LinkGoneDataJSON = await mondayFetch(query1);
+                        
+                //         const LinkGoneData = await LinkGoneDataJSON.json();
+                        
+                //         await sendNewSellerMessageDB.SET(null);               
+                //         contentScripts.pageRedirection(fixedData.workingUrls.home,'Link gone getting new one');
+                //     }catch(e){
+                //         contentScripts.showDataOnConsole('Error marking as "Link Gone"');
+                //     }
+                // }
                 const markAsFirstMessage = async ()=>{
                     contentScripts.showDataOnConsole('marking as "First Message"');
                     const firstMessageTimeDB = new ChromeStorage('firstMessageTime');
@@ -927,8 +1058,34 @@ const contentScripts = {
                             }
                         }
                     `;
+                    const formatDateToMondayAmerican = ()=>{
+                        const americanTime = new Date(new Date().toLocaleString('en-US', {timeZone: 'America/New_York'}));
+                        let month = '' + (americanTime.getMonth() + 1);
+                        let day = '' + americanTime.getDate();
+                        let year = americanTime.getFullYear();
+                    
+                        if (month.length < 2) 
+                            month = '0' + month;
+                        if (day.length < 2) 
+                            day = '0' + day;
+                    
+                        return [year, month, day].join('-');
+                    }
+                    const query2 = `
+                        mutation {
+                            change_simple_column_value(
+                                item_id: ${sendNewSellerMessage.item_id}, 
+                                board_id: ${fixedData.mondayFetch.borEffortBoardId}, 
+                                column_id: "${fixedData.mondayFetch.columnValuesIds.borEffortBoard.date}", 
+                                value: "${formatDateToMondayAmerican()}") {
+                                id
+                            }
+                        }
+                    `;
                     try{
                         const firstMessageDataJSON = await mondayFetch(query);
+                        const dateDataJSON = await mondayFetch(query2);
+                        const dateData = await dateDataJSON.json();
                         const firstMessageData = await firstMessageDataJSON.json();
                         const metaInformation = await metaInformationDB.GET();
                         const domain = metaInformation.domain;
@@ -959,20 +1116,24 @@ const contentScripts = {
                         contentScripts.showDataOnConsole('Error marking as "1st Message"');
                     }
                 }
-                // 335764422016209
-                // 1260480281369165
-                // 1697383433965404
-                // https://m.facebook.com/marketplace/item/335764422016209/?refid=12
                 if(window.location.href.indexOf('unavailable-product')!=-1){
                     console.log('unavailable-product');
-                    await markAsLinkGone();
+                    // markAsLinkGone replacement
+                    await contentScripts.markItemAsLinkGone(sendNewSellerMessage.item_id);
+                    await sendNewSellerMessageDB.SET(null);               
+                    contentScripts.pageRedirection(fixedData.workingUrls.home,'Link gone getting new one');
+                    // await markAsLinkGone();
                 }else{
                     if(window.location.href==`${fixedData.workingUrls.itemSuffix}${sendNewSellerMessage.fb_post_id}`){
                         
                         if(document.querySelector(fixedData.workingSelectors.newMessage.seeConversationButton)){
                             await markAsFirstMessage();
                         }else if(!document.querySelector('form [name="message"]')){
-                            await markAsLinkGone();
+                            // markAsLinkGone replacement
+                            await contentScripts.markItemAsLinkGone(sendNewSellerMessage.item_id);
+                            await sendNewSellerMessageDB.SET(null);               
+                            contentScripts.pageRedirection(fixedData.workingUrls.home,'Link gone getting new one');
+                            // await markAsLinkGone();
                         }else  if(document.querySelector('form [name="message"]')){
                             contentScripts.showDataOnConsole('sending message');
                             const message = document.querySelector(fixedData.workingSelectors.newMessage.messageInput);
@@ -995,6 +1156,11 @@ const contentScripts = {
                                 }
                                 await essentials.sleep(5000);
                                 contentScripts.showDataOnConsole(`waiting for message to send ${++i}`);
+                                if(i>20){
+                                    await sendNewSellerMessageDB.SET(null); 
+                                    contentScripts.pageRedirection(fixedData.workingUrls.home,'Message Sent and unseen messages started');
+                                    return null;
+                                }
                             }
                             await markAsFirstMessage();
                         }else{
@@ -1043,22 +1209,20 @@ const contentScripts = {
                     return url;
                 }
                 try{
-                    processUrlAndContinue(await setNameOnMondayAndCollectURL());
+                    await processUrlAndContinue(await setNameOnMondayAndCollectURL());
                 }catch(e){
                     const contentConsole = document.getElementById(fixedData.workingSelectors.contentConsole);
                     const collectAgainButton = document.createElement('button');
                     collectAgainButton.innerText = 'Collect & Set Again';
                     collectAgainButton.addEventListener('click',async ()=>{
                         try{
-                            processUrlAndContinue(await setNameOnMondayAndCollectURL());
+                            await processUrlAndContinue(await setNameOnMondayAndCollectURL());
                         }catch(e){
                             contentScripts.showDataOnConsole('Error Collecting URL');
                         }
                     });
                     contentConsole.appendChild(collectAgainButton);
                 }
-                
-                
             }
         }
         
@@ -1173,13 +1337,27 @@ const contentScripts = {
                                     const messageData = messageDatas[i];
                                     messageData.item_id = `${item_id}`;
                                     const message = messageData.message;
-                                    if(message==lastMessageFromServer){
+                                    if(message.replace(/[^a-zA-Z0-9]/g,'')==lastMessageFromServer.replace(/[^a-zA-Z0-9]/g,'')){
                                         break;
                                     }else{
                                         newMessageDatas = [messageData].concat(newMessageDatas);
                                     }
                                 }
                                 console.log(newMessageDatas);
+                                const readUnseenMessageCountDB = new ChromeStorage('readUnseenMessageCount');
+                                const readUnseenMessageCount = await readUnseenMessageCountDB.GET() || 0;
+                                for(let i=0;i<newMessageDatas.length;i++){
+                                    if(newMessageDatas[i].type=='image'){
+                                        if(newMessageDatas[i].message.includes('https://scontent.fdac')){
+                                            if(readUnseenMessageCount<2){
+                                                await readUnseenMessageCountDB.SET(readUnseenMessageCount+1);
+                                                contentScripts.pageRedirection(window.location.href,'redirecting to collect better image');
+                                                return null;
+                                            }
+                                        }
+                                    }
+                                }
+                                await readUnseenMessageCountDB.SET(0);
                                 await contentScripts.sendMessagesToServer(newMessageDatas);
                             }else{
                                 contentScripts.showDataOnConsole('message is not valid to read or write');
@@ -1229,27 +1407,38 @@ const contentScripts = {
         if(sendUnsentMessage.length!=0){
             const fb_post_id = sendUnsentMessage[0];
             if(window.location.href!=`${fixedData.workingUrls.sellerMessageSuffix}${fb_post_id}/`){
-                contentScripts.pageRedirection(`${fixedData.workingUrls.sellerMessageSuffix}${fb_post_id}/`,'Redirecting to seller message page');
+                if(fb_post_id==null){
+                    await afterSendingMessage();
+                }else{
+                    contentScripts.pageRedirection(`${fixedData.workingUrls.sellerMessageSuffix}${fb_post_id}/`,'Redirecting to seller message page');
+                }
             }else{
                 const validTosendMessage = contentScripts.isValidMessageInSellerMessage();
                 if(validTosendMessage){
                     const messages = await contentScripts.getUnsentMessagesByPostId(fb_post_id);
                     if(messages.length!=0){
+                        await essentials.sleep(5000);
                         for(let i=0;i<messages.length;i++){
                             const messageData = messages[i];
-                            const message = messageData.message;
-                            if(document.body.innerText.includes(message)){
-                                await contentScripts.markMessageAsSent(messageData.id);
-                                if(i==messages.length-1){
-                                    await afterSendingMessage();
-                                }
+                            if(messageData==null){
+                                await afterSendingMessage();
                             }else{
-                                await essentials.sleep(5000);
-                                const messageInput = document.querySelector(fixedData.workingSelectors.sendUnsentMessage.messageInput);
-                                messageInput.value = message;
-                                const sendButton = document.querySelector(fixedData.workingSelectors.sendUnsentMessage.sendButton);
-                                sendButton.click();
-                                break;
+                                const message = messageData.message;
+                                const all_content = document.body.innerText.replace(/[^a-zA-Z0-9]/g,'');
+                                const message_content = message.replace(/[^a-zA-Z0-9]/g,'');
+                                if(all_content.includes(message_content)){
+                                    await contentScripts.markMessageAsSent(messageData.id);
+                                    if(i==messages.length-1){
+                                        await afterSendingMessage();
+                                    }
+                                }else{
+                                    await essentials.sleep(5000);
+                                    const messageInput = document.querySelector(fixedData.workingSelectors.sendUnsentMessage.messageInput);
+                                    messageInput.value = message;
+                                    const sendButton = document.querySelector(fixedData.workingSelectors.sendUnsentMessage.sendButton);
+                                    sendButton.click();
+                                    break;
+                                }
                             }
                         }
                         contentScripts.showDataOnConsole('program should not be stucked here');
@@ -1260,6 +1449,8 @@ const contentScripts = {
                 }else{
                     const item_id = await contentScripts.itemIdByPostId(fb_post_id);
                     await contentScripts.markItemAsLinkGone(item_id);
+                    await contentScripts.markItemMessagesdone(item_id);
+                    await afterSendingMessage();
                 }
                 
             }
@@ -1321,6 +1512,10 @@ const popupSetup = async()=>{
 }
 const contentSetup = async()=>{
     contentScripts.setupConsoleBoard();
+    // testing-start
+    // const messages = await contentScripts.readCurrentMessage();
+    // console.log(messages);
+    // testing-end
     if(await contentScripts.isProgramReady()){
         contentScripts.showDataOnConsole('Program is ready');
         if(contentScripts.isUserLoggedIn()){
@@ -1395,7 +1590,7 @@ const contentSetup = async()=>{
         if(window.location.href.includes('chrome-extension')){
             await popupSetup();
         }else{
-            // await essentials.sleep(5000);
+
             await contentSetup();
         }
     }
