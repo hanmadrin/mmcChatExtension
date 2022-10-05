@@ -976,7 +976,7 @@ const contentScripts = {
             }
         }
     },
-    sendNewSellerMessage: async ()=>{
+    sendNewSellerMessage: async ()=>{ 
         const sendNewSellerMessageDB = new ChromeStorage('sendNewSellerMessage');
         const sendNewSellerMessage = await sendNewSellerMessageDB.GET();
         const workingStepDB = new ChromeStorage('workingStep');
