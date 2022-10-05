@@ -1146,9 +1146,9 @@ const contentScripts = {
                                     type: 'text',
                                     sent_from:'me',
                                     message: messageText,
-                                    timestamp,
+                                    timestamp: `${parseInt(new Date().getTime())}`,
                                     fb_id: accountInfo.id,
-                                    status: 'done',
+                                    status: 'unsent',
                                 }
                             ]);
                             await markAsFirstMessage();
