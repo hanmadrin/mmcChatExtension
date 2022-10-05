@@ -295,7 +295,7 @@ const fixedData = {
             defaultValue: false,
             point: 'checked',
             interactive: true,
-            requiredToStart: true,
+            requiredToStart: false,
         },
         debugModeSwitch:{
             title: 'Debug Switch',
