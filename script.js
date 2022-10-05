@@ -1131,6 +1131,8 @@ const contentScripts = {
                             await markAsFirstMessage();
                         }else if(document.querySelector(fixedData.workingSelectors.newMessage.askForDetailsButton)){
                             const accountInfo = await contentScripts.accountInfo();
+                            const metaInformation = await metaInformationDB.GET();
+                            const domain = metaInformation.domain;
                             const messageTextJSON = await fetch(`${domain}/extension/firstMessageText`,{
                                 method: 'POST',
                                 headers: {
