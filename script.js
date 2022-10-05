@@ -381,6 +381,7 @@ const fixedData = {
             messageInput: 'form [name="message"]',
             sendButton: '[type="submit"][value="Send"]',
             seeConversationButton: '[type="submit"][value="See Conversation"]',
+            askForDetailsButton: '[type="submit"][value="Ask for Details"]',
         },
         content:{
             console: 'CONTENT_CONSOLE',
@@ -1128,13 +1129,34 @@ const contentScripts = {
                         
                         if(document.querySelector(fixedData.workingSelectors.newMessage.seeConversationButton)){
                             await markAsFirstMessage();
+                        }else if(document.querySelector(fixedData.workingSelectors.newMessage.askForDetailsButton)){
+                            const accountInfo = await contentScripts.accountInfo();
+                            const messageTextJSON = await fetch(`${domain}/extension/firstMessageText`,{
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+                            const messageText = await messageTextJSON.json();
+                            await contentScripts.sendMessagesToServer([
+                                {
+                                    item_id : sendNewSellerMessage.item_id,
+                                    type: 'text',
+                                    sent_from:'me',
+                                    message: messageText,
+                                    timestamp,
+                                    fb_id: accountInfo.id,
+                                    status: 'done',
+                                }
+                            ]);
+                            await markAsFirstMessage();
                         }else if(!document.querySelector('form [name="message"]')){
                             // markAsLinkGone replacement
                             await contentScripts.markItemAsLinkGone(sendNewSellerMessage.item_id);
                             await sendNewSellerMessageDB.SET(null);               
                             contentScripts.pageRedirection(fixedData.workingUrls.home,'Link gone getting new one');
                             // await markAsLinkGone();
-                        }else  if(document.querySelector('form [name="message"]')){
+                        }else if(document.querySelector('form [name="message"]')){
                             contentScripts.showDataOnConsole('sending message');
                             const message = document.querySelector(fixedData.workingSelectors.newMessage.messageInput);
                             const button = document.querySelector(fixedData.workingSelectors.newMessage.sendButton);
