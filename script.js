@@ -308,7 +308,7 @@ const fixedData = {
         hourlyMessageLimit:{
             title: 'Hourly Message Limit',
             type: 'number',
-            defaultValue: 0,
+            defaultValue: 3,
             point: 'value',
             interactive: true,
             requiredToStart: true,
@@ -340,7 +340,7 @@ const fixedData = {
         domain:{
             title: 'Domain',
             type: 'text',
-            defaultValue: 'http://127.0.0.1:8282',
+            defaultValue: 'https://xentola.com',
             point: 'value',
             interactive: true,
             requiredToStart: true,
@@ -401,7 +401,7 @@ const fixedData = {
     },
     limits:{
         loadMessages: 10,
-        lastUnreadMesaage: (86400),
+        lastUnreadMesaage: (86400*3),
     },
     mondayFetch:{
         appraisalCounterBoard : 1255820475,
