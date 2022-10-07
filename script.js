@@ -1035,6 +1035,10 @@ const contentScripts = {
         const setSecondMessage = await setSecondMessageJSON.json();
         return setSecondMessage;
     },
+    updateFirstMessageTime: async()=>{
+        const firstMessageTimeDB = new ChromeStorage('firstMessageTime');
+        firstMessageTimeDB.SET(new Date().getTime()/1000);
+    },
     sendNewSellerMessage: async ()=>{ 
         const sendNewSellerMessageDB = new ChromeStorage('sendNewSellerMessage');
         const sendNewSellerMessage = await sendNewSellerMessageDB.GET();
@@ -1115,7 +1119,7 @@ const contentScripts = {
                 // }
                 const markAsFirstMessage = async ()=>{
                     contentScripts.showDataOnConsole('marking as "First Message"');
-                    const firstMessageTimeDB = new ChromeStorage('firstMessageTime');
+                    
                     const query = `
                         mutation {
                             change_simple_column_value(
@@ -1174,7 +1178,6 @@ const contentScripts = {
 
                             console.log('first message action saved');
                             await sendNewSellerMessageDB.SET(null);       
-                            firstMessageTimeDB.SET(new Date().getTime()/1000);
                             await workingStepDB.SET('collectUnseenMessage');
                             contentScripts.pageRedirection(fixedData.workingUrls.home,'Message Sent and unseen messages started');
                         }else{
@@ -1197,6 +1200,7 @@ const contentScripts = {
                         
                         if(document.querySelector(fixedData.workingSelectors.newMessage.seeConversationButton)){
                             await markAsFirstMessage();
+                            await contentScripts.updateFirstMessageTime();
                         }else if(document.querySelector(fixedData.workingSelectors.newMessage.askForDetailsButton)){
                             const accountInfo = await contentScripts.accountInfo();
                             const metaInformation = await metaInformationDB.GET();
@@ -1255,6 +1259,7 @@ const contentScripts = {
                                 }
                             }
                             await markAsFirstMessage();
+                            await contentScripts.updateFirstMessageTime();
                         }else{
                             contentScripts.showDataOnConsole('something unexpected happening!');
                         }
@@ -1500,6 +1505,7 @@ const contentScripts = {
             }else{
                 const hasSecondMessageToSend = await contentScripts.hasSecondMessageToSend();
                 if(hasSecondMessageToSend){
+                    // await waitWithVisual(has)
                     await contentScripts.setSecondMessage(hasSecondMessageToSend.item_id);
                     const fb_post_id = await contentScripts.postIdByItemId(hasSecondMessageToSend.item_id);
                     sendUnsentMessage = [fb_post_id];
@@ -1537,6 +1543,8 @@ const contentScripts = {
                                 if(all_content.includes(message_content)){
                                     await contentScripts.markMessageAsSent(messageData.id);
                                     if(i==messages.length-1){
+                                        // updateFirstMessageTime
+                                        await contentScripts.updateFirstMessageTime();
                                         await afterSendingMessage();
                                     }
                                 }else{
@@ -1653,7 +1661,8 @@ const contentSetup = async()=>{
                     // await contentScripts.waitWithVisual(isValidTimeToSendFirstMessage.waitingTime);
                     // const isValidTimeToSendUnsentMessage = await contentScripts.isValidTimeToSendUnsentMessage();
                     if(isValidTimeToSendFirstMessage.status){
-                        const hasSecondMessageToSend = await contentScripts.hasSecondMessageToSend();
+                        await contentScripts.waitWithVisual(isValidTimeToSendFirstMessage.waitingTime);
+                        // const hasSecondMessageToSend = await contentScripts.hasSecondMessageToSend();
                         await contentScripts.sendUnsentMessage();
                     }else{
                         const workingStepDB = new ChromeStorage('workingStep');
