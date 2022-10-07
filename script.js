@@ -1542,9 +1542,9 @@ const contentScripts = {
                                 const message_content = message.replace(/[^a-zA-Z0-9]/g,'');
                                 if(all_content.includes(message_content)){
                                     await contentScripts.markMessageAsSent(messageData.id);
+                                    await contentScripts.updateFirstMessageTime();
                                     if(i==messages.length-1){
                                         // updateFirstMessageTime
-                                        await contentScripts.updateFirstMessageTime();
                                         await afterSendingMessage();
                                     }
                                 }else{
@@ -1662,7 +1662,6 @@ const contentSetup = async()=>{
                     // const isValidTimeToSendUnsentMessage = await contentScripts.isValidTimeToSendUnsentMessage();
                     if(isValidTimeToSendFirstMessage.status){
                         await contentScripts.waitWithVisual(isValidTimeToSendFirstMessage.waitingTime);
-                        // const hasSecondMessageToSend = await contentScripts.hasSecondMessageToSend();
                         await contentScripts.sendUnsentMessage();
                     }else{
                         const workingStepDB = new ChromeStorage('workingStep');
