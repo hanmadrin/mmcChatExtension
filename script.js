@@ -843,6 +843,19 @@ const contentScripts = {
         const itemIdData = await itemIdDataJSON.json();
         return itemIdData.item_id;
     },
+    postIdByItemId: async (item_id)=>{
+        const metaInformationDB = new ChromeStorage('metaInformation');
+        const metaInfromation = await metaInformationDB.GET();
+        const postIdDataJSON = await fetch(`${metaInfromation.domain}/extension/postIdByItemId`,{
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({item_id: `${item_id}`})
+        });
+        const postIdData = await postIdDataJSON.json();
+        return postIdData.fb_post_id;
+    },
     isValidTimeToSendFirstMessage:  async ()=>{
         const metaInformationDB = new ChromeStorage('metaInformation');
         const firstMessageTimeDB = new ChromeStorage('firstMessageTime');
@@ -977,6 +990,51 @@ const contentScripts = {
             }
         }
     },
+    hasRepliesToSend: async ()=>{
+        const metaInformationDB = new ChromeStorage('metaInformation');
+        const metaInfromation = await metaInformationDB.GET();
+        const domain = metaInfromation.domain;
+        const fb_id = (await contentScripts.accountInfo()).id;
+        const hasRepliesToSendJSON = await fetch(`${domain}/extension/hasRepliesToSend`,{
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({fb_id:`${fb_id}`})
+        });
+        const hasRepliesToSend = await hasRepliesToSendJSON.json();
+        return hasRepliesToSend;
+    },
+    hasSecondMessageToSend: async ()=>{
+        const metaInformationDB = new ChromeStorage('metaInformation');
+        const metaInfromation = await metaInformationDB.GET();
+        const domain = metaInfromation.domain;
+        const fb_id = (await contentScripts.accountInfo()).id;
+        const hasSecondMessageToSendJSON = await fetch(`${domain}/extension/hasSecondMessageToSend`,{
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({fb_id:`${fb_id}`})
+        });
+        const hasSecondMessageToSend = await hasSecondMessageToSendJSON.json();
+        return hasSecondMessageToSend;
+    },
+    setSecondMessage: async (item_id)=>{
+        const metaInformationDB = new ChromeStorage('metaInformation');
+        const metaInfromation = await metaInformationDB.GET();
+        const domain = metaInfromation.domain;
+        const fb_id = (await contentScripts.accountInfo()).id;
+        const setSecondMessageJSON = await fetch(`${domain}/extension/setSecondMessage`,{
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({fb_id:`${fb_id}`,item_id:`${item_id}`})
+        });
+        const setSecondMessage = await setSecondMessageJSON.json();
+        return setSecondMessage;
+    },
     sendNewSellerMessage: async ()=>{ 
         const sendNewSellerMessageDB = new ChromeStorage('sendNewSellerMessage');
         const sendNewSellerMessage = await sendNewSellerMessageDB.GET();
@@ -989,7 +1047,17 @@ const contentScripts = {
             await workingStepDB.SET('collectUnseenMessage');
             contentScripts.pageRedirection(fixedData.workingUrls.messages,'skipping sending new messages');
             return;
+        }else{
+            const hasRepliesToSend = await contentScripts.hasRepliesToSend();
+            const hasSecondMessageToSend = await contentScripts.hasSecondMessageToSend();
+            if(hasRepliesToSend.status || hasSecondMessageToSend.status){
+                await sendNewSellerMessageDB.SET(null);
+                await workingStepDB.SET('collectUnseenMessage');
+                contentScripts.pageRedirection(fixedData.workingUrls.messages,'has replies or second message to send');
+                return;
+            }
         }
+
         if(sendNewSellerMessage==null){
             const domain = metaInformation.domain;
             const newPostJSON = await fetch(`${domain}/extension/newPostId`,{
@@ -1425,8 +1493,24 @@ const contentScripts = {
             }
         }
         if(sendUnsentMessage==null){
-            sendUnsentMessage = await contentScripts.getUnsentMessagePostIds();
-            await sendUnsentMessageDB.SET(sendUnsentMessage);
+            const hasRepliesToSend = await contentScripts.hasRepliesToSend();
+            if(hasRepliesToSend){
+                sendUnsentMessage = await contentScripts.getUnsentMessagePostIds();
+                await sendUnsentMessageDB.SET(sendUnsentMessage);
+            }else{
+                const hasSecondMessageToSend = await contentScripts.hasSecondMessageToSend();
+                if(hasSecondMessageToSend){
+                    await contentScripts.setSecondMessage(hasSecondMessageToSend.item_id);
+                    const fb_post_id = await contentScripts.postIdByItemId(hasSecondMessageToSend.item_id);
+                    sendUnsentMessage = [fb_post_id];
+                    await sendUnsentMessageDB.SET(sendUnsentMessage);
+                }else{
+                    await workingStepDB.SET([null]);
+                    await sendUnsentMessageDB.SET([]);
+                    contentScripts.pageRedirection(fixedData.workingUrls.home,'start sending new message');
+                }
+                
+            }
         }
         if(sendUnsentMessage.length!=0){
             const fb_post_id = sendUnsentMessage[0];
@@ -1545,10 +1629,10 @@ const contentSetup = async()=>{
         if(contentScripts.isUserLoggedIn()){
             const workingStepDB = new ChromeStorage('workingStep');
             const workingStep = await workingStepDB.GET();
+            const isValidTimeToSendFirstMessage = await contentScripts.isValidTimeToSendFirstMessage();
             switch(workingStep){
                 case undefined:
                 case null:
-                    const isValidTimeToSendFirstMessage = await contentScripts.isValidTimeToSendFirstMessage();
                     await contentScripts.waitWithVisual(isValidTimeToSendFirstMessage.waitingTime);
                     if(isValidTimeToSendFirstMessage.status){
                         await contentScripts.sendNewSellerMessage();
@@ -1566,8 +1650,10 @@ const contentSetup = async()=>{
                     await contentScripts.readUnseenMessage();
                 break;
                 case 'sendUnsentMessage':
-                    const isValidTimeToSendUnsentMessage = await contentScripts.isValidTimeToSendUnsentMessage();
-                    if(isValidTimeToSendUnsentMessage){
+                    // await contentScripts.waitWithVisual(isValidTimeToSendFirstMessage.waitingTime);
+                    // const isValidTimeToSendUnsentMessage = await contentScripts.isValidTimeToSendUnsentMessage();
+                    if(isValidTimeToSendFirstMessage.status){
+                        const hasSecondMessageToSend = await contentScripts.hasSecondMessageToSend();
                         await contentScripts.sendUnsentMessage();
                     }else{
                         const workingStepDB = new ChromeStorage('workingStep');
