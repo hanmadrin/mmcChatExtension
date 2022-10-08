@@ -649,6 +649,39 @@ const contentScripts = {
             });
         }
     },
+    markItemAsSecondMessage: async (item_id)=>{
+        console.log('marking item as second message');
+        if(item_id){
+            const query = `
+                query{
+                    items(ids: [${item_id}]){
+                        board{
+                            id
+                        }
+                    }
+                }
+            `;
+            const boardDataJSON = await mondayFetch(query);
+            const boardData = await boardDataJSON.json();
+            const boardId = boardData.data.items[0].board.id;
+            if(boardId==fixedData.mondayFetch.borEffortBoardId){
+                const columnId = fixedData.mondayFetch.columnValuesIds.borEffortBoard.status;
+                const query = `
+                    mutation {
+                        change_simple_column_value(
+                            item_id: ${item_id}, 
+                            board_id: ${boardId}, 
+                            column_id: "${columnId}", 
+                            value: "2nd 1st Msg") {
+                            id
+                        }
+                    }
+                `;
+                const itemDataJSON = await mondayFetch(query);
+                const itemData = await itemDataJSON.json();
+            }
+        }
+    },
     readCurrentMessage: async ()=>{
         contentScripts.showDataOnConsole('Reading current message');
         const accountInfo = await contentScripts.accountInfo();
@@ -1507,6 +1540,7 @@ const contentScripts = {
                 if(hasSecondMessageToSend){
                     // await waitWithVisual(has)
                     await contentScripts.setSecondMessage(hasSecondMessageToSend.item_id);
+                    await contentScripts.markItemAsSecondMessage(hasSecondMessageToSend.item_id);
                     const fb_post_id = await contentScripts.postIdByItemId(hasSecondMessageToSend.item_id);
                     sendUnsentMessage = [fb_post_id];
                     await sendUnsentMessageDB.SET(sendUnsentMessage);
