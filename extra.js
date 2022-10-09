@@ -36,3 +36,49 @@ const openMarketPlaceMessage = async ()=>{
         console.log('Marketplace message not found');
     }
 };
+const getCarVinFromText = (text)=>{
+    text = text.toUpperCase();
+    text = text.replace(/[^A-Z0-9]/g, '');
+    const vinRegex = /([A-HJ-NPR-Z\d]{8})([X\d]{1})([E-HJ-NPR-TV]{1})([A-HJ-NPR-Z\d]{2})([\d]{5})/;
+    const vinMatch = vinRegex.exec(text);
+    let vin = '';
+    if(vinMatch){
+        vin = vinMatch[0];
+        const beforeCheckDigit = vin.substring(0, 8);
+        const checkDigit = vin.substring(8, 9)=="X"?"10":parseInt(vin.substring(8, 9));
+        const afterCheckDigit = vin.substring(9);
+        const stringWithoutCheckDigit = beforeCheckDigit + afterCheckDigit;
+        const changeLetterToNumberValue = (letter)=>{
+            // no i,O,Q
+            letter = letter.replace(/[AJ]/g, '1');
+            letter = letter.replace(/[BKS]/g, '2');
+            letter = letter.replace(/[CLT]/g, '3');
+            letter = letter.replace(/[DMU]/g, '4');
+            letter = letter.replace(/[ENV]/g, '5');
+            letter = letter.replace(/[FW]/g, '6');
+            letter = letter.replace(/[GPX]/g, '7');
+            letter = letter.replace(/[HY]/g, '8');
+            letter = letter.replace(/[RZ]/g, '9');
+            return letter;
+        };
+        const numberWithoutCheckDigit = changeLetterToNumberValue(stringWithoutCheckDigit);
+        const numberWeights = [8, 7, 6, 5, 4, 3, 2, 10, 9, 8, 7, 6, 5, 4, 3, 2];
+        const numberArray = numberWithoutCheckDigit.split('');
+        let sum = 0;
+        for(let i=0; i<numberArray.length; i++){
+            sum += numberArray[i]*numberWeights[i];
+        }
+        const checkDigitCalculatedValue = sum%11;
+        if(checkDigitCalculatedValue==checkDigit){
+            return vin;
+        }else{
+            console.log('Wrong Vin');
+            return null;
+        }
+    }else{
+        console.log('No vin found');
+        return null;
+    }
+}
+// 1G1ZE5ST7HF216961
+getCarVinFromText(`1G1ZE5ST7HF216962 I get home I will take some pictures and send them to you but mechanical165431`);
