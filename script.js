@@ -1532,7 +1532,7 @@ const contentScripts = {
         }
         if(sendUnsentMessage==null){
             const hasRepliesToSend = await contentScripts.hasRepliesToSend();
-            if(hasRepliesToSend){
+            if(hasRepliesToSend.status){
                 contentScripts.showDataOnConsole('has replies to send');
                 sendUnsentMessage = await contentScripts.getUnsentMessagePostIds();
                 await sendUnsentMessageDB.SET(sendUnsentMessage);
@@ -1549,7 +1549,7 @@ const contentScripts = {
                     await sendUnsentMessageDB.SET(sendUnsentMessage);
                 }else{
                     contentScripts.showDataOnConsole('no second message to send');
-                    await workingStepDB.SET([null]);
+                    await workingStepDB.SET(null);
                     await sendUnsentMessageDB.SET([]);
                     contentScripts.pageRedirection(fixedData.workingUrls.home,'start sending new message');
                 }
