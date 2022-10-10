@@ -81,4 +81,5 @@ const getCarVinFromText = (text)=>{
     }
 }
 // 1G1ZE5ST7HF216961
-getCarVinFromText(`1G1ZE5ST7HF216962 I get home I will take some pictures and send them to you but mechanical165431`);
+a = getCarVinFromText(` I get home I will take som1G1ZE5ST7  HF216961e pictures and se1G1ZE5ST7HF216962nd them to you but mechanical165431`);
+console.log(a);

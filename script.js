@@ -313,6 +313,14 @@ const fixedData = {
             interactive: true,
             requiredToStart: true,
         },
+        checkMessageDaysLimit:{
+            title: 'Check message days limit',
+            type: 'number',
+            defaultValue: 3,
+            point: 'value',
+            interactive: true,
+            requiredToStart: true,
+        },
         messagingStartTime:{
             title: 'Messaging Start Time(24 HOURS)',
             type: 'number',
@@ -401,7 +409,7 @@ const fixedData = {
     },
     limits:{
         loadMessages: 10,
-        lastUnreadMesaage: (86400*3),
+        // lastUnreadMesaage: (86400*3),
     },
     mondayFetch:{
         appraisalCounterBoard : 1255820475,
@@ -1360,6 +1368,7 @@ const contentScripts = {
     },
     collectUnseenMessage: async()=>{
         const workingStepDB = new ChromeStorage('workingStep');
+        const metaInformationDB = new ChromeStorage('metaInformation');
         if(window.location.href==fixedData.workingUrls.messages){
             let atttemptCount = 0;
             await essentials.sleep(5000);
@@ -1371,8 +1380,9 @@ const contentScripts = {
                 const lastMessageTimeObject = allUnseenMessages[allUnseenMessages.length-1].querySelector(fixedData.workingSelectors.messages.timeStamp).getAttribute('data-store');
                 const lastMessageTime = JSON.parse(lastMessageTimeObject).time;
                 const timeNow = (new Date().getTime())/1000;
-
-                if(allUnseenMarketplaceMessages.length >= fixedData.limits.loadMessages || moreMessagesButton==null || (timeNow - lastMessageTime) >= fixedData.limits.lastUnreadMesaage){
+                const metaInformation = await metaInformationDB.GET();
+                const checkMessageDaysLimit = metaInformation.checkMessageDaysLimit;
+                if(allUnseenMarketplaceMessages.length >= fixedData.limits.loadMessages || moreMessagesButton==null || (timeNow - lastMessageTime) >= checkMessageDaysLimit*86400){
                     break;
                 }else{
                     contentScripts.showDataOnConsole(`Load More Attempt: ${atttemptCount}`);
@@ -1387,7 +1397,9 @@ const contentScripts = {
                 const unseenMessageTimeObject = unseenMessage.querySelector(fixedData.workingSelectors.messages.timeStamp).getAttribute('data-store');
                 const unseenMessageTime = JSON.parse(unseenMessageTimeObject).time;
                 const timeNow = (new Date().getTime())/1000;
-                if((timeNow - unseenMessageTime) <= fixedData.limits.lastUnreadMesaage){
+                const metaInformation = await metaInformationDB.GET();
+                const checkMessageDaysLimit = metaInformation.checkMessageDaysLimit;
+                if((timeNow - unseenMessageTime) <= checkMessageDaysLimit*86400){
                     const messageLink = unseenMessage.querySelector('a');
                     const url = new URL(messageLink.href);
                     const messageTID = url.searchParams.get('tid');
