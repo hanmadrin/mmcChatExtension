@@ -1548,13 +1548,13 @@ const contentScripts = {
             if(hasRepliesToSend.status){
                 contentScripts.showDataOnConsole('has replies to send');
                 sendUnsentMessage = await contentScripts.getUnsentMessagePostIds();
-                console.log('unsent message post ids',sendUnsentMessage);
-                console.log(sendUnsentMessage);
-                console.log(`item_id: ${hasRepliesToSend.item_id}`);
-                const fb_post_id = await contentScripts.postIdByItemId(hasRepliesToSend.item_id);
-                console.log(`fb_post_id: ${fb_post_id}`);
-                sendUnsentMessage =[fb_post_id];
-                console.log(`postIds to send: ${sendUnsentMessage}`);
+                // console.log('unsent message post ids',sendUnsentMessage);
+                // console.log(sendUnsentMessage);
+                // console.log(`item_id: ${hasRepliesToSend.item_id}`);
+                // const fb_post_id = await contentScripts.postIdByItemId(hasRepliesToSend.item_id);
+                // console.log(`fb_post_id: ${fb_post_id}`);
+                // sendUnsentMessage =[fb_post_id];
+                // console.log(`postIds to send: ${sendUnsentMessage}`);
                 await sendUnsentMessageDB.SET(sendUnsentMessage);
             }else{
                 contentScripts.showDataOnConsole('no replies but checking for second message');
