@@ -1547,6 +1547,7 @@ const contentScripts = {
             if(hasRepliesToSend.status){
                 contentScripts.showDataOnConsole('has replies to send');
                 sendUnsentMessage = await contentScripts.getUnsentMessagePostIds();
+                console.log(`postIds to send: ${sendUnsentMessage}`);
                 await sendUnsentMessageDB.SET(sendUnsentMessage);
             }else{
                 contentScripts.showDataOnConsole('no replies but checking for second message');
