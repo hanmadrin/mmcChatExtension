@@ -1546,7 +1546,9 @@ const contentScripts = {
             const hasRepliesToSend = await contentScripts.hasRepliesToSend();
             if(hasRepliesToSend.status){
                 contentScripts.showDataOnConsole('has replies to send');
-                sendUnsentMessage = await contentScripts.getUnsentMessagePostIds();
+                // sendUnsentMessage = await contentScripts.getUnsentMessagePostIds();
+                const fb_post_id = await contentScripts.postIdByItemId(hasRepliesToSend.item_id);
+                sendUnsentMessage =[fb_post_id];
                 console.log(`postIds to send: ${sendUnsentMessage}`);
                 await sendUnsentMessageDB.SET(sendUnsentMessage);
             }else{
