@@ -1377,7 +1377,7 @@ const contentScripts = {
                 const allUnseenMessages = document.querySelectorAll(fixedData.workingSelectors.messages.unseenMessages);
                 const allUnseenMarketplaceMessages = document.querySelectorAll(`${fixedData.workingSelectors.messages.allMessages} `);
                 const moreMessagesButton = document.querySelector(fixedData.workingSelectors.messages.moreMessagesButton);
-                const lastMessageTimeObject = allUnseenMessages.length!=0?allUnseenMessages[allUnseenMessages.length-1].querySelector(fixedData.workingSelectors.messages.timeStamp).getAttribute('data-store'):'{time:0}';
+                const lastMessageTimeObject = allUnseenMessages.length!=0?allUnseenMessages[allUnseenMessages.length-1].querySelector(fixedData.workingSelectors.messages.timeStamp).getAttribute('data-store'):'{"time":0}';
                 const lastMessageTime = JSON.parse(lastMessageTimeObject).time;
                 const timeNow = (new Date().getTime())/1000;
                 const metaInformation = await metaInformationDB.GET();
