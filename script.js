@@ -1095,7 +1095,8 @@ const contentScripts = {
         }else{
             const hasRepliesToSend = await contentScripts.hasRepliesToSend();
             const hasSecondMessageToSend = await contentScripts.hasSecondMessageToSend();
-            if(hasRepliesToSend.status || hasSecondMessageToSend.status){
+            // if(hasRepliesToSend.status || hasSecondMessageToSend.status){
+            if(hasRepliesToSend.status){
                 await sendNewSellerMessageDB.SET(null);
                 await workingStepDB.SET('collectUnseenMessage');
                 contentScripts.pageRedirection(fixedData.workingUrls.messages,'has replies or second message to send');
@@ -1557,22 +1558,21 @@ const contentScripts = {
                 // console.log(`postIds to send: ${sendUnsentMessage}`);
                 await sendUnsentMessageDB.SET(sendUnsentMessage);
             }else{
-                contentScripts.showDataOnConsole('no replies but checking for second message');
-                const hasSecondMessageToSend = await contentScripts.hasSecondMessageToSend();
-                if(hasSecondMessageToSend.status){
-                    // await waitWithVisual(has)
-                    contentScripts.showDataOnConsole('has second message to send');
-                    await contentScripts.setSecondMessage(hasSecondMessageToSend.item_id);
-                    await contentScripts.markItemAsSecondMessage(hasSecondMessageToSend.item_id);
-                    const fb_post_id = await contentScripts.postIdByItemId(hasSecondMessageToSend.item_id);
-                    sendUnsentMessage = [fb_post_id];
-                    await sendUnsentMessageDB.SET(sendUnsentMessage);
-                }else{
+                // contentScripts.showDataOnConsole('no replies but checking for second message');
+                // const hasSecondMessageToSend = await contentScripts.hasSecondMessageToSend();
+                // if(hasSecondMessageToSend.status){
+                //     contentScripts.showDataOnConsole('has second message to send');
+                //     await contentScripts.setSecondMessage(hasSecondMessageToSend.item_id);
+                //     await contentScripts.markItemAsSecondMessage(hasSecondMessageToSend.item_id);
+                //     const fb_post_id = await contentScripts.postIdByItemId(hasSecondMessageToSend.item_id);
+                //     sendUnsentMessage = [fb_post_id];
+                //     await sendUnsentMessageDB.SET(sendUnsentMessage);
+                // }else{
                     contentScripts.showDataOnConsole('no second message to send');
                     await workingStepDB.SET(null);
                     await sendUnsentMessageDB.SET([]);
                     contentScripts.pageRedirection(fixedData.workingUrls.home,'start sending new message');
-                }
+                // }
                 
             }
         }
