@@ -1617,6 +1617,7 @@ const contentScripts = {
                                     const consoleBoard = document.getElementById(fixedData.workingSelectors.content.console);
                                     const markAsLinkGoneButton = document.createElement('button');
                                     markAsLinkGoneButton.innerText = 'Mark as link gone';
+                                    consoleBoard.append(markAsLinkGoneButton);
                                     markAsLinkGoneButton.onclick = async ()=>{
                                         const item_id = await contentScripts.itemIdByPostId(fb_post_id);
                                         await contentScripts.markItemAsLinkGone(item_id);
