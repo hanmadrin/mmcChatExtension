@@ -1697,7 +1697,7 @@ const contentScripts = {
                }
             }
         };
-
+        contentScripts.showDataOnConsole(workingStep);
         if(input){
             if(workingStep == undefined || workingStep == null){
                 messageCounts[currentHour].new++;
@@ -1786,7 +1786,7 @@ const contentSetup = async()=>{
                 case undefined:
                 case null:
                     await contentScripts.waitWithVisual(isValidTimeToSendFirstMessage.waitingTime);
-                    if(messageCountEligible.totalStatus){
+                    if(!messageCountEligible.totalStatus){
                         await contentScripts.waitWithVisual('600');
                     }
                     if(isValidTimeToSendFirstMessage.status && messageCountEligible.status){
