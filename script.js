@@ -1653,7 +1653,7 @@ const contentScripts = {
         const workingStepDB = new ChromeStorage('workingStep');
         const messageCountDB = new ChromeStorage('messageCount');
         const workingStep = await workingStepDB.GET();
-        const messageCounts = await messageCountDB.GET();
+        let messageCounts = await messageCountDB.GET();
         const currentHour = parseInt(new Date().getTime()/1000/3600);
         if(messageCounts==null){
             messageCounts = {
