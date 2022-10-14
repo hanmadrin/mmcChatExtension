@@ -1297,8 +1297,19 @@ const contentScripts = {
                                 await essentials.sleep(5000);
                                 contentScripts.showDataOnConsole(`waiting for message to send ${++i}`);
                                 if(i>20){
-                                    await sendNewSellerMessageDB.SET(null); 
-                                    contentScripts.pageRedirection(fixedData.workingUrls.home,'Message Sent and unseen messages started');
+                                    const consoleBoard = document.getElementById(fixedData.workingSelectors.content.console);
+                                    const tryAgainButton = document.createElement('button');
+                                    tryAgainButton.innerText = 'Try Again';
+                                    tryAgainButton.onclick = async ()=>{
+                                        contentScripts.pageRedirection(window.location.href,'Trying to send first message Again');
+                                    }
+                                    const removeLeadButton = document.createElement('button');
+                                    removeLeadButton.innerText = 'Remove Lead';
+                                    removeLeadButton.onclick = async ()=>{
+                                        await sendNewSellerMessageDB.SET(null); 
+                                        contentScripts.pageRedirection(fixedData.workingUrls.home,'Message Sent and unseen messages started');
+                                    };
+                                    consoleBoard.append(tryAgainButton,removeLeadButton);
                                     return null;
                                 }
                             }
