@@ -1661,7 +1661,7 @@ const contentScripts = {
                 [currentHour-1]: {new:0,reply:0},
                 [currentHour-2]: {new:0,reply:0},
             }
-            await messageCountDB.SET(counts);
+            await messageCountDB.SET(messageCounts);
         }else{
             const keys = Object.keys(messageCounts);
             for(let i=0;i<keys.length;i++){
