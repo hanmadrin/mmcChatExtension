@@ -1092,17 +1092,18 @@ const contentScripts = {
             await workingStepDB.SET('collectUnseenMessage');
             contentScripts.pageRedirection(fixedData.workingUrls.messages,'skipping sending new messages');
             return;
-        }else{
-            const hasRepliesToSend = await contentScripts.hasRepliesToSend();
-            const hasSecondMessageToSend = await contentScripts.hasSecondMessageToSend();
-            // if(hasRepliesToSend.status || hasSecondMessageToSend.status){
-            if(hasRepliesToSend.status){
-                await sendNewSellerMessageDB.SET(null);
-                await workingStepDB.SET('collectUnseenMessage');
-                contentScripts.pageRedirection(fixedData.workingUrls.messages,'has replies or second message to send');
-                return;
-            }
         }
+        // else{
+        //     const hasRepliesToSend = await contentScripts.hasRepliesToSend();
+        //     const hasSecondMessageToSend = await contentScripts.hasSecondMessageToSend();
+        //     // if(hasRepliesToSend.status || hasSecondMessageToSend.status){
+        //     if(hasRepliesToSend.status){
+        //         await sendNewSellerMessageDB.SET(null);
+        //         await workingStepDB.SET('collectUnseenMessage');
+        //         contentScripts.pageRedirection(fixedData.workingUrls.messages,'has replies or second message to send');
+        //         return;
+        //     }
+        // }
 
         if(sendNewSellerMessage==null){
             const domain = metaInformation.domain;
@@ -1159,7 +1160,7 @@ const contentScripts = {
                 //         contentScripts.showDataOnConsole('Error marking as "Link Gone"');
                 //     }
                 // }
-                const markAsFirstMessage = async ()=>{
+                const markAsFirstMessage = async (message)=>{
                     contentScripts.showDataOnConsole('marking as "First Message"');
                     
                     const query = `
@@ -1213,11 +1214,12 @@ const contentScripts = {
                                 item_id: `${sendNewSellerMessage.item_id}`,
                                 fb_post_id: `${sendNewSellerMessage.fb_post_id}`,
                                 fb_id: `${(await contentScripts.accountInfo()).id}`,
-                                fb_user_name: `${(await contentScripts.accountInfo()).name}`
+                                fb_user_name: `${(await contentScripts.accountInfo()).name}`,
+                                messageText: message
                             })
                         });
                         if(saveFirstMessageActionJSON.status==200){
-
+                            await contentScripts.messageCountEligible(true);
                             console.log('first message action saved');
                             await sendNewSellerMessageDB.SET(null);       
                             await workingStepDB.SET('collectUnseenMessage');
@@ -1265,7 +1267,7 @@ const contentScripts = {
                                     status: 'unsent',
                                 }
                             ]);
-                            await markAsFirstMessage();
+                            await markAsFirstMessage(messageText);
                         }else if(!document.querySelector('form [name="message"]')){
                             // markAsLinkGone replacement
                             await contentScripts.markItemAsLinkGone(sendNewSellerMessage.item_id);
@@ -1300,7 +1302,7 @@ const contentScripts = {
                                     return null;
                                 }
                             }
-                            await markAsFirstMessage();
+                            await markAsFirstMessage(messageText);
                             await contentScripts.updateFirstMessageTime();
                         }else{
                             contentScripts.showDataOnConsole('something unexpected happening!');
@@ -1601,6 +1603,7 @@ const contentScripts = {
                                 if(all_content.includes(message_content)){
                                     await contentScripts.markMessageAsSent(messageData.id);
                                     await contentScripts.updateFirstMessageTime();
+                                    await contentScripts.messageCountEligible(true);
                                     if(i==messages.length-1){
                                         // updateFirstMessageTime
                                         await afterSendingMessage();
@@ -1611,6 +1614,15 @@ const contentScripts = {
                                     messageInput.value = message;
                                     const sendButton = document.querySelector(fixedData.workingSelectors.sendUnsentMessage.sendButton);
                                     sendButton.click();
+                                    const consoleBoard = document.getElementById(fixedData.workingSelectors.content.console);
+                                    const markAsLinkGoneButton = document.createElement('button');
+                                    markAsLinkGoneButton.innerText = 'Mark as link gone';
+                                    markAsLinkGoneButton.onclick = async ()=>{
+                                        const item_id = await contentScripts.itemIdByPostId(fb_post_id);
+                                        await contentScripts.markItemAsLinkGone(item_id);
+                                        await contentScripts.markItemMessagesdone(item_id);
+                                        await afterSendingMessage();
+                                    };
                                     break;
                                 }
                             }
@@ -1636,7 +1648,79 @@ const contentScripts = {
             contentScripts.pageRedirection(fixedData.workingUrls.home,'start sending new message');
         }
     },
-    
+    messageCountEligible: async (input)=>{
+        const workingStepDB = new ChromeStorage('workingStep');
+        const messageCountDB = new ChromeStorage('messageCount');
+        const workingStep = await workingStepDB.GET();
+        const messageCounts = await messageCountDB.GET();
+        const currentHour = parseInt(new Date().getTime()/1000/3600);
+        if(messageCounts==null){
+            messageCounts = {
+                [currentHour]: {new:0,reply:0},
+                [currentHour-1]: {new:0,reply:0},
+                [currentHour-2]: {new:0,reply:0},
+            }
+            await messageCountDB.SET(counts);
+        }else{
+            const keys = Object.keys(messageCounts);
+            for(let i=0;i<keys.length;i++){
+                const key = keys[i];
+                if(key<currentHour-2){
+                    delete messageCounts[key];
+                }
+            }
+            if(messageCounts[currentHour]==null){
+                messageCounts[currentHour] = {new:0,reply:0};
+            }
+            if(messageCounts[currentHour-1]==null){
+                messageCounts[currentHour-1] = {new:0,reply:0};
+            }
+            if(messageCounts[currentHour-2]==null){
+                messageCounts[currentHour-2] = {new:0,reply:0};
+            }
+            await messageCountDB.SET(messageCounts);
+        }
+        const eligibility = async (type)=>{
+            if(type=='new'){
+                if(messageCounts[currentHour-1].new+messageCounts[currentHour-2].new-2 > messageCounts[currentHour-1].reply+messageCounts[currentHour-2].reply){
+                    return false;
+                }else{
+                    return true;
+                }
+            }else if(type=='reply'){
+               const hasRepliesToSend = await contentScripts.hasRepliesToSend();
+               if(hasRepliesToSend.status){
+                    return true;
+               }else{
+                    return false;
+               }
+            }
+        };
+
+        if(input){
+            if(workingStep == undefined || workingStep == null){
+                messageCounts[currentHour].new++;
+            }else if(workingStep == 'sendUnsentMessage'){
+                messageCounts[currentHour].reply++;
+            }else{
+                contentScripts.showDataOnConsole('This is not possible!!!!!');
+            }
+        }else{
+            if(workingStep == undefined || workingStep == null){
+                return {
+                    status: await eligibility('new'),
+                    totalStatus: (await eligibility('new'))||(await eligibility('reply')),
+                }
+            }else if(workingStep == 'sendUnsentMessage'){
+                return {
+                    status: await eligibility('reply'),
+                    // totalStatus: (await eligibility('new'))||(await eligibility('reply')),
+                }
+            }else{
+                contentScripts.showDataOnConsole('This is not possible!!!!!');
+            }
+        }
+    }
 };
 const popupSetup = async()=>{
     console.log('popup');
@@ -1696,15 +1780,22 @@ const contentSetup = async()=>{
             const workingStepDB = new ChromeStorage('workingStep');
             const workingStep = await workingStepDB.GET();
             const isValidTimeToSendFirstMessage = await contentScripts.isValidTimeToSendFirstMessage();
+            const messageCountEligible = await contentScripts.messageCountEligible();
             switch(workingStep){
                 case undefined:
                 case null:
                     await contentScripts.waitWithVisual(isValidTimeToSendFirstMessage.waitingTime);
-                    if(isValidTimeToSendFirstMessage.status){
+                    if(messageCountEligible.totalStatus){
+                        await contentScripts.waitWithVisual('600');
+                    }
+                    if(isValidTimeToSendFirstMessage.status && messageCountEligible.status){
                         await contentScripts.sendNewSellerMessage();
                     }else{
                         const workingStepDB = new ChromeStorage('workingStep');
                         await workingStepDB.SET('collectUnseenMessage');
+                        if(!messageCountEligible.status){
+                            contentScripts.showDataOnConsole('Message count Eligibility is in action');
+                        }
                         contentScripts.pageRedirection(fixedData.workingUrls.home,'start collecting unseen message');
                     }
                 break;
@@ -1718,12 +1809,15 @@ const contentSetup = async()=>{
                 case 'sendUnsentMessage':
                     // await contentScripts.waitWithVisual(isValidTimeToSendFirstMessage.waitingTime);
                     // const isValidTimeToSendUnsentMessage = await contentScripts.isValidTimeToSendUnsentMessage();
-                    if(isValidTimeToSendFirstMessage.status){
+                    if(isValidTimeToSendFirstMessage.status && messageCountEligible.status){
                         await contentScripts.waitWithVisual(isValidTimeToSendFirstMessage.waitingTime);
                         await contentScripts.sendUnsentMessage();
                     }else{
                         const workingStepDB = new ChromeStorage('workingStep');
                         await workingStepDB.SET(null);
+                        if(!messageCountEligible.status){
+                            contentScripts.showDataOnConsole('Message count Eligibility is in action');
+                        }
                         contentScripts.pageRedirection(fixedData.workingUrls.home,'start sending new message');
                     }
                 break;
