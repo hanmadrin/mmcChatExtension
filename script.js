@@ -1553,7 +1553,7 @@ const contentScripts = {
             }else{
                 await sendUnsentMessageDB.SET(sendUnsentMessage);
                 const fb_post_id = sendUnsentMessage[0];
-                contentScripts.pageRedirection(`${fixedData.workingUrls.sellerMessageSuffix}${fb_post_id}/`,'Redirecting to seller message page');
+                contentScripts.pageRedirection(fixedData.workingUrls.home,'Redirecting to seller message page');
             }
         }
         if(sendUnsentMessage==null){
