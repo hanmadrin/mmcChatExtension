@@ -1242,10 +1242,84 @@ const contentScripts = {
                 }else{
                     if(window.location.href==`${fixedData.workingUrls.itemSuffix}${sendNewSellerMessage.fb_post_id}`){
                         
-                        if(document.querySelector(fixedData.workingSelectors.newMessage.seeConversationButton)){
-                            await markAsFirstMessage();
-                            await contentScripts.updateFirstMessageTime();
-                        }else if(document.querySelector(fixedData.workingSelectors.newMessage.askForDetailsButton)){
+                        // if(document.querySelector(fixedData.workingSelectors.newMessage.seeConversationButton)){
+                        //     await markAsFirstMessage();
+                        //     await contentScripts.updateFirstMessageTime();
+                        // }else if(document.querySelector(fixedData.workingSelectors.newMessage.askForDetailsButton)){
+                        //     const accountInfo = await contentScripts.accountInfo();
+                        //     const metaInformation = await metaInformationDB.GET();
+                        //     const domain = metaInformation.domain;
+                        //     const messageTextJSON = await fetch(`${domain}/extension/firstMessageText`,{
+                        //         method: 'POST',
+                        //         headers: {
+                        //             'Content-Type': 'application/json'
+                        //         }
+                        //     });
+                        //     const messageText = await messageTextJSON.json();
+                        //     await contentScripts.sendMessagesToServer([
+                        //         {
+                        //             item_id : sendNewSellerMessage.item_id,
+                        //             type: 'text',
+                        //             sent_from:'me',
+                        //             message: messageText,
+                        //             timestamp: `${parseInt(new Date().getTime())}`,
+                        //             fb_id: accountInfo.id,
+                        //             status: 'unsent',
+                        //         }
+                        //     ]);
+                        //     await markAsFirstMessage(messageText);
+                        // }else if(!document.querySelector('form [name="message"]')){
+                        //     // markAsLinkGone replacement
+                        //     await contentScripts.markItemAsLinkGone(sendNewSellerMessage.item_id);
+                        //     await sendNewSellerMessageDB.SET(null);               
+                        //     contentScripts.pageRedirection(fixedData.workingUrls.home,'Link gone getting new one');
+                        //     // await markAsLinkGone();
+                        // }else if(document.querySelector('form [name="message"]')){
+                        //     contentScripts.showDataOnConsole('sending message');
+                        //     const message = document.querySelector(fixedData.workingSelectors.newMessage.messageInput);
+                        //     const button = document.querySelector(fixedData.workingSelectors.newMessage.sendButton);
+                        //     const metaInformation = await metaInformationDB.GET();
+                        //     const domain = metaInformation.domain;
+                        //     const messageTextJSON = await fetch(`${domain}/extension/firstMessageText`,{
+                        //         method: 'POST',
+                        //         headers: {
+                        //             'Content-Type': 'application/json'
+                        //         }
+                        //     });
+                        //     const messageText = await messageTextJSON.json();
+                        //     message.value = messageText;
+                        //     button.click();
+                        //     let i =0;
+                        //     while(true){
+                        //         if(document.querySelector(fixedData.workingSelectors.newMessage.seeConversationButton)){
+                        //             break;
+                        //         }
+                        //         await essentials.sleep(5000);
+                        //         contentScripts.showDataOnConsole(`waiting for message to send ${++i}`);
+                        //         if(i>20){
+                        //             const consoleBoard = document.getElementById(fixedData.workingSelectors.content.console);
+                        //             const tryAgainButton = document.createElement('button');
+                        //             tryAgainButton.innerText = 'Try Again';
+                        //             tryAgainButton.onclick = async ()=>{
+                        //                 contentScripts.pageRedirection(window.location.href,'Trying to send first message Again');
+                        //             }
+                        //             const removeLeadButton = document.createElement('button');
+                        //             removeLeadButton.innerText = 'Remove Lead';
+                        //             removeLeadButton.onclick = async ()=>{
+                        //                 await sendNewSellerMessageDB.SET(null); 
+                        //                 contentScripts.pageRedirection(fixedData.workingUrls.home,'Message Sent and unseen messages started');
+                        //             };
+                        //             consoleBoard.append(tryAgainButton,removeLeadButton);
+                        //             return null;
+                        //         }
+                        //     }
+                        //     await markAsFirstMessage(messageText);
+                        //     await contentScripts.updateFirstMessageTime();
+                        // }else{
+                        //     contentScripts.showDataOnConsole('something unexpected happening!');
+                        // }
+
+                        if(document.querySelector(fixedData.workingSelectors.newMessage.askForDetailsButton)){
                             const accountInfo = await contentScripts.accountInfo();
                             const metaInformation = await metaInformationDB.GET();
                             const domain = metaInformation.domain;
@@ -1275,9 +1349,7 @@ const contentScripts = {
                             contentScripts.pageRedirection(fixedData.workingUrls.home,'Link gone getting new one');
                             // await markAsLinkGone();
                         }else if(document.querySelector('form [name="message"]')){
-                            contentScripts.showDataOnConsole('sending message');
-                            const message = document.querySelector(fixedData.workingSelectors.newMessage.messageInput);
-                            const button = document.querySelector(fixedData.workingSelectors.newMessage.sendButton);
+                            const accountInfo = await contentScripts.accountInfo();
                             const metaInformation = await metaInformationDB.GET();
                             const domain = metaInformation.domain;
                             const messageTextJSON = await fetch(`${domain}/extension/firstMessageText`,{
@@ -1287,37 +1359,36 @@ const contentScripts = {
                                 }
                             });
                             const messageText = await messageTextJSON.json();
-                            message.value = messageText;
-                            button.click();
-                            let i =0;
-                            while(true){
-                                if(document.querySelector(fixedData.workingSelectors.newMessage.seeConversationButton)){
-                                    break;
+                            await contentScripts.sendMessagesToServer([
+                                {
+                                    item_id : sendNewSellerMessage.item_id,
+                                    type: 'text',
+                                    sent_from:'me',
+                                    message: messageText,
+                                    timestamp: `${parseInt(new Date().getTime())}`,
+                                    fb_id: accountInfo.id,
+                                    status: 'unsent',
                                 }
-                                await essentials.sleep(5000);
-                                contentScripts.showDataOnConsole(`waiting for message to send ${++i}`);
-                                if(i>20){
-                                    const consoleBoard = document.getElementById(fixedData.workingSelectors.content.console);
-                                    const tryAgainButton = document.createElement('button');
-                                    tryAgainButton.innerText = 'Try Again';
-                                    tryAgainButton.onclick = async ()=>{
-                                        contentScripts.pageRedirection(window.location.href,'Trying to send first message Again');
-                                    }
-                                    const removeLeadButton = document.createElement('button');
-                                    removeLeadButton.innerText = 'Remove Lead';
-                                    removeLeadButton.onclick = async ()=>{
-                                        await sendNewSellerMessageDB.SET(null); 
-                                        contentScripts.pageRedirection(fixedData.workingUrls.home,'Message Sent and unseen messages started');
-                                    };
-                                    consoleBoard.append(tryAgainButton,removeLeadButton);
-                                    return null;
-                                }
-                            }
+                            ]);
                             await markAsFirstMessage(messageText);
-                            await contentScripts.updateFirstMessageTime();
                         }else{
                             contentScripts.showDataOnConsole('something unexpected happening!');
+                            const consoleBoard = document.getElementById(fixedData.workingSelectors.content.console);
+                            const tryAgainButton = document.createElement('button');
+                            tryAgainButton.innerText = 'Try Again';
+                            tryAgainButton.onclick = async ()=>{
+                                contentScripts.pageRedirection(window.location.href,'Trying to send first message Again');
+                            }
+                            const removeLeadButton = document.createElement('button');
+                            removeLeadButton.innerText = 'Remove Lead';
+                            removeLeadButton.onclick = async ()=>{
+                                await contentScripts.markItemAsLinkGone(sendNewSellerMessage.item_id);
+                                await sendNewSellerMessageDB.SET(null);               
+                                contentScripts.pageRedirection(fixedData.workingUrls.home,'Link gone getting new one');
+                            };
+
                         }
+
                     }else{
                         contentScripts.pageRedirection(`${fixedData.workingUrls.itemSuffix}${sendNewSellerMessage.fb_post_id}`,'Not on item page');
                     }
