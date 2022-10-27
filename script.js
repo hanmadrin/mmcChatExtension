@@ -800,7 +800,7 @@ const contentScripts = {
         image.click();
         let url = '';
         while(true){
-            await essentials.sleep(1000);
+            await essentials.sleep(5000);
             contentScripts.showDataOnConsole('Waiting for image to load');
             if(window.location.href.includes('https://m.facebook.com/messages/attachment_preview') || window.location.href.includes('https://m.facebook.com/messages/attachment_confirm')){
                 const attachmentLinks = [...document.querySelectorAll('a')].filter((a)=>a.innerText=='Download'||a.innerText=='Open');
