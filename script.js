@@ -815,7 +815,7 @@ const contentScripts = {
             }
         }
         while(true){
-            await essentials.sleep(1000);
+            await essentials.sleep(5000);
             contentScripts.showDataOnConsole('Waiting for image to close');
             if(window.location.href.includes('https://m.facebook.com/messages/read/')){
                 break;
