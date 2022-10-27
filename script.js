@@ -863,8 +863,20 @@ const contentScripts = {
                             }
                         }
                     `;
-                    const itemDataJSON = await mondayFetch(query);
-                    const itemData = await itemDataJSON.json();
+                    try{
+                        const itemDataJSON = await mondayFetch(query);
+                        const itemData = await itemDataJSON.json();
+                        const itemId = itemData.data.change_simple_column_value.id;
+                    }catch(e){
+                        const consoleBoard = document.getElementById(fixedData.workingSelectors.content.console);
+                        const removeLeadButton  = document.createElement('button');
+                        removeLeadButton.innerText = 'Remove Lead';
+                        removeLeadButton.onclick = async ()=>{
+                            await contentScripts.markItemAsLinkGone(item_id);
+                        };
+                        consoleBoard.appendChild(removeLeadButton);
+                    }
+                    
                 }
             }
         }
