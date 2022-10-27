@@ -414,6 +414,7 @@ const fixedData = {
     mondayFetch:{
         appraisalCounterBoard : 1255820475,
         borEffortBoardId : 1250230293,
+        systemArchiveBoardId : 3353179014,
         myAccountId : 30273194,
         columnValuesIds:{
             borEffortBoard:{
@@ -424,7 +425,11 @@ const fixedData = {
             },
             appraisalCounterBoard:{
                 status: 'status',
+            },
+            systemArchiveBoard:{
+                status: 'status',
             }
+
         },
         statuses: {
             borEffortBoard:{
@@ -653,7 +658,10 @@ const contentScripts = {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({item_id: `${item_id}`})
+                body: JSON.stringify({
+                    item_id: `${item_id}`,
+                    fb_id: `${metaInfromation.fb_id}`
+                })
             });
         }
     },
@@ -827,6 +835,39 @@ const contentScripts = {
             body: JSON.stringify({messageData})
         });
         const messageDataResponse = await messageDataJSON.json();
+        if(messageDataResponse.restored){
+            if(messageData.length>0){
+                const item_id = messageData[0].item_id;
+                const query = `
+                    query{
+                        items(ids: [${item_id}]){
+                            board{
+                                id
+                            }
+                        }
+                    }
+                `;
+                const boardDataJSON = await mondayFetch(query);
+                const boardData = await boardDataJSON.json();
+                const boardId = boardData.data.items[0].board.id;
+                if(boardId==fixedData.mondayFetch.systemArchiveBoardId){
+                    const columnId = fixedData.mondayFetch.columnValuesIds.systemArchiveBoard.status;
+                    const query = `
+                        mutation {
+                            change_simple_column_value(
+                                item_id: ${item_id}, 
+                                board_id: ${boardId}, 
+                                column_id: "${columnId}", 
+                                value: "Restored") {
+                                id
+                            }
+                        }
+                    `;
+                    const itemDataJSON = await mondayFetch(query);
+                    const itemData = await itemDataJSON.json();
+                }
+            }
+        }
         return messageDataResponse;
     },
     isCurrentMessageValid: ()=>{
@@ -1386,7 +1427,7 @@ const contentScripts = {
                                 await sendNewSellerMessageDB.SET(null);               
                                 contentScripts.pageRedirection(fixedData.workingUrls.home,'Link gone getting new one');
                             };
-
+                            consoleBoard.append(tryAgainButton,removeLeadButton);
                         }
 
                     }else{
@@ -1867,6 +1908,7 @@ const contentSetup = async()=>{
             switch(workingStep){
                 case undefined:
                 case null:
+                    const hasRepliesToSend = await contentScripts.hasRepliesToSend();
                     await contentScripts.waitWithVisual(isValidTimeToSendFirstMessage.waitingTime);
                     if(!messageCountEligible.totalStatus){
                         await contentScripts.waitWithVisual('600');
