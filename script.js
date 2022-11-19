@@ -451,7 +451,8 @@ const fixedData = {
                 person : 'person',
                 url: 'text7',
                 status: 'status',
-                date: 'date4'
+                date: 'date4',
+                fbCode: 'text84'
             },
             appraisalCounterBoard:{
                 status: 'status',
@@ -2192,7 +2193,66 @@ const contentScripts = {
                     const message_content = message.replace(/[^a-zA-Z0-9]/g,'');
                     if(all_content.includes(message_content)){
                         console.log('message already sent');
+                        if(workingStep=='sendFirstMessage'){
+                            contentScripts.showDataOnConsole('marking as "First Message"');
+                            const query = `
+                                mutation {
+                                    change_simple_column_value(
+                                        item_id: ${item_id}, 
+                                        board_id: ${fixedData.mondayFetch.borEffortBoardId}, 
+                                        column_id: "${fixedData.mondayFetch.columnValuesIds.borEffortBoard.status}", 
+                                        value: "1st MSG") {
+                                        id
+                                    }
+                                }
+                            `;
+                            const formatDateToMondayAmerican = ()=>{
+                                const americanTime = new Date(new Date().toLocaleString('en-US', {timeZone: 'America/New_York'}));
+                                let month = '' + (americanTime.getMonth() + 1);
+                                let day = '' + americanTime.getDate();
+                                let year = americanTime.getFullYear();
+                            
+                                if (month.length < 2) 
+                                    month = '0' + month;
+                                if (day.length < 2) 
+                                    day = '0' + day;
+                            
+                                return [year, month, day].join('-');
+                            }
+                            const query1 = `
+                                mutation {
+                                    change_simple_column_value(
+                                        item_id: ${item_id}, 
+                                        board_id: ${fixedData.mondayFetch.borEffortBoardId}, 
+                                        column_id: "${fixedData.mondayFetch.columnValuesIds.borEffortBoard.fbCode}", 
+                                        value: "${(await contentScripts.accountInfo()).name}") {
+                                        id
+                                    }
+                                }
+                            `;
+                            const query2 = `
+                                mutation {
+                                    change_simple_column_value(
+                                        item_id: ${item_id}, 
+                                        board_id: ${fixedData.mondayFetch.borEffortBoardId}, 
+                                        column_id: "${fixedData.mondayFetch.columnValuesIds.borEffortBoard.date}", 
+                                        value: "${formatDateToMondayAmerican()}") {
+                                        id
+                                    }
+                                }
+                            `;
+                            const firstMessageDataJSON = await mondayFetch(query);
+                            const fbCodeJSON = await mondayFetch(query1);
+                            const dateDataJSON = await mondayFetch(query2);
+                            const dateData = await dateDataJSON.json();
+                            const fbCode = await fbCodeJSON.json();
+                            const firstMessageData = await firstMessageDataJSON.json();
+                            const metaInformation = await metaInformationDB.GET();
+                            const domain = metaInformation.domain;
+                            
+                        }
                         await contentScripts.messageCounter(true);
+                        await contentScripts.markMessageAsSent(id);
                         await workingStepDB.SET('collectUnseenMessage');
                         await contentScripts.pageRedirection(fixedData.workingUrls.home,'will collect unseen message now');
                         return true;
