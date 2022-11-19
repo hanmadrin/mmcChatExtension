@@ -2157,6 +2157,7 @@ const contentScripts = {
                 }
             }
         }else{
+            console.log(`server count: ${serverCount.total} local count: ${localCount.total}`);
             console.log('dont have slot for sending message this hour');
             await contentScripts.waitWithVisual(300);
             await workingStepDB.SET('collectUnseenMessage');
