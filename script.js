@@ -2065,10 +2065,7 @@ const contentScripts = {
                     console.log('has unsent first message');
                     await sendOutgoingMessageDB.SET(hasUnsentFirstMessage);
                     await workingStepDB.SET('sendFirstMessage');
-                    await contentScripts.pageRedirection({
-                        url: fixedData.workingUrls.home,
-                        message: 'will send first message now',
-                    });
+                    await contentScripts.pageRedirection(fixedData.workingUrls.home,'will send first message now');
                     return true;
                 }else{
                     console.log('dont have unsent first message');
@@ -2105,10 +2102,7 @@ const contentScripts = {
                             console.log('initiated item messaging');
                             await sendOutgoingMessageDB.SET(hasUnsentFirstMessage);
                             await workingStepDB.SET('sendFirstMessage');
-                            await contentScripts.pageRedirection({
-                                url: fixedData.workingUrls.home,
-                                message: 'will send first message now',
-                            });
+                            await contentScripts.pageRedirection(fixedData.workingUrls.home,'will send first message now');
                             return true;
                         }else{
                             console.log('initiation failed!! Try again');
@@ -2122,10 +2116,7 @@ const contentScripts = {
                             console.log('has replies to send');
                             await sendOutgoingMessageDB.SET(hasRepliesToSend);
                             await workingStepDB.SET('sendReplyMessage');
-                            await contentScripts.pageRedirection({
-                                url: fixedData.workingUrls.home,
-                                message: 'will send reply message now',
-                            });
+                            await contentScripts.pageRedirection(fixedData.workingUrls.home,'will send reply message now');
                             return true;
                         }else{
                             console.log('dont have replies to send');
@@ -2140,19 +2131,13 @@ const contentScripts = {
                     console.log('has replies to send');
                     await sendOutgoingMessageDB.SET(hasRepliesToSend);
                     await workingStepDB.SET('sendReplyMessage');
-                    await contentScripts.pageRedirection({
-                        url: fixedData.workingUrls.home,
-                        message: 'will send reply message now',
-                    });
+                    await contentScripts.pageRedirection(fixedData.workingUrls.home,'will send reply message now');
                     return true;
                 }else{
                     console.log('dont have replies to send');
                     await contentScripts.waitWithVisual(300);
                     await workingStepDB.SET('collectUnseenMessage');
-                    await contentScripts.pageRedirection({
-                        url: fixedData.workingUrls.home,
-                        message: 'will collect unseen message now',
-                    });
+                    await contentScripts.pageRedirection(fixedData.workingUrls.home,'will collect unseen message now');
                     return false;
                 }
             }
@@ -2163,10 +2148,7 @@ const contentScripts = {
             console.log('dont have slot for sending message this hour');
             await contentScripts.waitWithVisual(300);
             await workingStepDB.SET('collectUnseenMessage');
-            await contentScripts.pageRedirection({
-                url: fixedData.workingUrls.home,
-                message: 'will collect unseen message now',
-            });
+            await contentScripts.pageRedirection(fixedData.workingUrls.home,'will collect unseen message now');
             return false;
         }
     },
@@ -2212,10 +2194,7 @@ const contentScripts = {
                         console.log('message already sent');
                         await contentScripts.messageCounter(true);
                         await workingStepDB.SET('collectUnseenMessage');
-                        await contentScripts.pageRedirection({
-                            url: fixedData.workingUrls.home,
-                            message: 'will collect unseen message now',
-                        });
+                        await contentScripts.pageRedirection(fixedData.workingUrls.home,'will collect unseen message now');
                         return true;
                     }else{
                         console.log('sending message');
