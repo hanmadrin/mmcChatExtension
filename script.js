@@ -2056,9 +2056,9 @@ const contentScripts = {
         const metaInformation = await metaInformationDB.GET();
         const serverCount = {new:metaInformation.hourlyNewMessageLimit,reply:metaInformation.hourlyReplyMessageLimit,total:metaInformation.hourlyMessageLimit};
         const localCount = await contentScripts.messageCounter();
-        if(serverCount.total<localCount.total){
+        if(serverCount.total>localCount.total){
             console.log('have slot for sending message this hour');
-            if(serverCount.new<localCount.new){  
+            if(serverCount.new>localCount.new){  
                 console.log('have slot for sending new message this hour');
                 const hasUnsentFirstMessage = await contentScripts.hasUnsentFirstMessage();
                 if(hasUnsentFirstMessage.status){
@@ -2134,7 +2134,7 @@ const contentScripts = {
                         }
                     }
                 }
-            }else if(serverCount.reply<localCount.reply){
+            }else if(serverCount.reply>localCount.reply){
                 const hasRepliesToSend = await contentScripts.hasRepliesToSend();
                 if(hasRepliesToSend.status){
                     console.log('has replies to send');
