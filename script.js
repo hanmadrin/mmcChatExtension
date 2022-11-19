@@ -2423,7 +2423,7 @@ const contentSetup = async()=>{
                 //         }
                 //         contentScripts.pageRedirection(fixedData.workingUrls.home,'start sending new message');
                 //     }
-                // break;
+                break;
                 default:
                     console.log('what??');
                 break;
