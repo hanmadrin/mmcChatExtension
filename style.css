@@ -366,7 +366,9 @@ body{background-color: var(--dark-bg);}
 }
 
 
-
+.overflow-y-auto{
+    overflow-y: auto;
+}
 #POPUP button{
     width:100%;
     padding:10px;

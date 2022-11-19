@@ -10,6 +10,10 @@
         "tabs",
         "cookies"
     ],
+    "host_permissions": [
+        "wss://*.xentola.com/*",
+        "https://*.xentola.com/*"
+    ],
     "action": {
         "default_popup": "popup.html"
     },
