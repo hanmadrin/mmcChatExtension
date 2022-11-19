@@ -516,7 +516,7 @@ const contentScripts = {
             const metaKey = metaKeys[i];
             const meta = metas[metaKey];
             if(meta.requiredToStart){
-                if(values[metaKey]==null){
+                if(values[metaKey]===undefined || values[metaKey]===false){
                     console.log('meta not found', metaKey,values[metaKey]);
                     return false;
                 }
@@ -1996,7 +1996,7 @@ const contentScripts = {
     },
     messageTime: async (input)=>{
         const messageTimeDB = new ChromeStorage('messageTime');
-        const messageTime = await messageTimeDB.GET();
+        let messageTime = await messageTimeDB.GET();
         if(messageTime == null){
             messageTime = 0;
         }
@@ -2385,6 +2385,7 @@ const contentSetup = async()=>{
         await contentScripts.setupAccountControl();
     }else{
         contentScripts.showDataOnConsole('Device ID name not found');
+        return false;
     }
     if(await contentScripts.isProgramReady()){
         contentScripts.showDataOnConsole('Program is ready');
