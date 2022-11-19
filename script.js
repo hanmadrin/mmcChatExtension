@@ -2039,7 +2039,7 @@ const contentScripts = {
             }
         }
         await messageCounterDB.SET(messageCounter);
-        return messageCounter;
+        return messageCounter[currentHour];
     },
     prepareOutgoingMessage: async()=>{
         console.log('preparing outgoing message');
