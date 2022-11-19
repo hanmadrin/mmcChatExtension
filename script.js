@@ -2054,7 +2054,7 @@ const contentScripts = {
         const metaInformationDB = new ChromeStorage('metaInformation');
         const sendOutgoingMessageDB = new ChromeStorage('sendOutgoingMessage');
         const metaInformation = await metaInformationDB.GET();
-        const serverCount = {new:metaInformation.hourlyNewMessageLimit,reply:metaInformation.hourlyReplyMessageLimit};
+        const serverCount = {new:metaInformation.hourlyNewMessageLimit,reply:metaInformation.hourlyReplyMessageLimit,total:metaInformation.hourlyMessageLimit};
         const localCount = await contentScripts.messageCounter();
         if(serverCount.total<localCount.total){
             console.log('have slot for sending message this hour');
@@ -2158,6 +2158,7 @@ const contentScripts = {
             }
         }else{
             console.log(metaInformation);
+            console.log(localCount);
             console.log(`server count: ${serverCount.total} local count: ${localCount.total}`);
             console.log('dont have slot for sending message this hour');
             await contentScripts.waitWithVisual(300);
