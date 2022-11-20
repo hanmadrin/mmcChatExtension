@@ -1673,6 +1673,11 @@ const contentScripts = {
                                 const messageDatas = await contentScripts.readCurrentMessage();
                                 const lastMessageFromServer = await contentScripts.lastMessageOnServerByPostId(itemData.fb_post_id);
                                 const item_id = await contentScripts.itemIdByPostId(itemData.fb_post_id);
+                                if(item_id==null){
+                                    contentScripts.showDataOnConsole('item_id not found');
+                                    await afterReadingMessage();
+                                    return;
+                                }
                                 let newMessageDatas = [];
                                 for(let i = messageDatas.length-1;i>=0;i--){
                                     const messageData = messageDatas[i];
@@ -1974,7 +1979,8 @@ const contentScripts = {
         const hourlyMessageLimit = metaInformation.hourlyMessageLimit;
         const minimumDuration = 3600/hourlyMessageLimit/100*90;
         const time = new Date().getTime()/1000;
-        const timeLeftThisHour = 3600-parseInt(time);
+        const timeDoneThisHour = (new Date().getMinutes())*60 + new Date().getSeconds();
+        const timeLeftThisHour = 3600 - timeDoneThisHour;
         const messageTime = await contentScripts.messageTime();
         
         if(messagingStartHour==0){
