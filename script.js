@@ -693,7 +693,7 @@ const contentScripts = {
                 },
                 body: JSON.stringify({
                     item_id: `${item_id}`,
-                    fb_id: `${metaInfromation.fb_id}`
+                    fb_id: `${(await contentScripts.accountInfo()).fb_id}`
                 })
             });
         }
