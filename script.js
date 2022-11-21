@@ -2274,10 +2274,13 @@ const contentScripts = {
                         markAsLinkGoneButton.innerText = 'Mark as link gone';
                         consoleBoard.append(markAsLinkGoneButton);
                         markAsLinkGoneButton.onclick = async ()=>{
-                            const item_id = await contentScripts.itemIdByPostId(fb_post_id);
+                            console.log('marking as link gone');
                             await contentScripts.markItemAsLinkGone(item_id);
                             await contentScripts.markItemMessagesdone(item_id);
-                            await afterSendingMessage();
+                            console.log('found a message that is not valid, grabbing new one');
+                            await workingStepDB.SET('prepareOutgoingMessage');
+                            contentScripts.pageRedirection(fixedData.workingUrls.home,'will grab another unsent message');
+                            return false;
                         };
                         return true;
                     }
