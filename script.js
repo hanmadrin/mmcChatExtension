@@ -2107,7 +2107,7 @@ const contentScripts = {
                         const initiateItemMessagingData = await initiateItemMessaging.json();
                         if(initiateItemMessagingData.status){
                             console.log('initiated item messaging');
-                            await sendOutgoingMessageDB.SET(hasUnsentFirstMessage);
+                            await sendOutgoingMessageDB.SET(initiateItemMessagingData);
                             await workingStepDB.SET('sendFirstMessage');
                             await contentScripts.pageRedirection(fixedData.workingUrls.home,'will send first message now');
                             return true;
