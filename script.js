@@ -2016,25 +2016,34 @@ const contentScripts = {
     messageCounter: async(input)=>{
         const messageCounterDB = new ChromeStorage('messageCounter');
         let messageCounter = await messageCounterDB.GET();
-        const metaInformationDB = new ChromeStorage('metaInformation');
-        const metaInformation = await metaInformationDB.GET();
+        
         const workingStepDB = new ChromeStorage('workingStep');
         const workingStep = await workingStepDB.GET();
-
+        const metaInformationDB = new ChromeStorage('metaInformation');
+        const metaInformation = await metaInformationDB.GET();
         const currentHour = metaInformation.messagingStartTime;
         if(messageCounter==null){
             messageCounter = {
                 [currentHour]: {new:0,reply:0,total:0},
+                [currentHour-1]: {new:0,reply:0,total:0},
+                [currentHour-2]: {new:0,reply:0,total:0},
             };
         }
-        if(messageCounter[currentHour]==null){
-            const oldHours = Object.keys(messageCounter);
-            for(let i=0;i<oldHours.length;i++){
-                delete messageCounter[oldHours[i]];
+        const hours = Object.keys(messageCounter);
+        for(let i=0;i<hours.length;i++){
+            const hour = hours[i];
+            if(hour<currentHour-2){
+                delete messageCounter[hour];
             }
-            messageCounter = {
-                [currentHour]: {new:0,reply:0,total:0},
-            };
+        }
+        if(messageCounter[currentHour]==null){
+            messageCounter[currentHour] = {new:0,reply:0,total:0};
+        }
+        if(messageCounter[currentHour-1]==null){
+            messageCounter[currentHour-1] = {new:0,reply:0,total:0};
+        }
+        if(messageCounter[currentHour-2]==null){
+            messageCounter[currentHour-2] = {new:0,reply:0,total:0};
         }
         if(input){
             await contentScripts.messageTime(true);
@@ -2046,7 +2055,7 @@ const contentScripts = {
             }
         }
         await messageCounterDB.SET(messageCounter);
-        return messageCounter[currentHour];
+        return messageCounter;
     },
     prepareOutgoingMessage: async()=>{
         console.log('preparing outgoing message');
@@ -2062,10 +2071,14 @@ const contentScripts = {
         const sendOutgoingMessageDB = new ChromeStorage('sendOutgoingMessage');
         const metaInformation = await metaInformationDB.GET();
         const serverCount = {new:metaInformation.hourlyNewMessageLimit,reply:metaInformation.hourlyReplyMessageLimit,total:metaInformation.hourlyMessageLimit};
-        const localCount = await contentScripts.messageCounter();
+
+        const currentHour = metaInformation.messagingStartTime;
+        const localCounts = await contentScripts.messageCounter();
+        const localCount = localCounts[currentHour];
         if(serverCount.total>localCount.total){
             console.log('have slot for sending message this hour');
-            if(serverCount.new>localCount.new){  
+            const balanceLogic = localCounts[currentHour-1].new+localCounts[currentHour-2].new-2 > localCounts[currentHour-1].reply+localCounts[currentHour-2].reply
+            if(serverCount.new>localCount.new && balanceLogic){  
                 console.log('have slot for sending new message this hour');
                 const hasUnsentFirstMessage = await contentScripts.hasUnsentFirstMessage();
                 if(hasUnsentFirstMessage.status){
@@ -2132,7 +2145,7 @@ const contentScripts = {
                         }
                     }
                 }
-            }else if(serverCount.reply>localCount.reply){
+            }else if(serverCount.reply>localCount.reply || serverCount.total>localCount.total){
                 const hasRepliesToSend = await contentScripts.hasRepliesToSend();
                 if(hasRepliesToSend.status){
                     console.log('has replies to send');
@@ -2142,7 +2155,7 @@ const contentScripts = {
                     return true;
                 }else{
                     console.log('dont have replies to send');
-                    await contentScripts.waitWithVisual(300);
+                    await contentScripts.waitWithVisual(360);
                     await workingStepDB.SET('collectUnseenMessage');
                     await contentScripts.pageRedirection(fixedData.workingUrls.home,'will collect unseen message now');
                     return false;
@@ -2153,7 +2166,7 @@ const contentScripts = {
             console.log(localCount);
             console.log(typeof(serverCount.total), typeof(localCount.total));
             console.log('dont have slot for sending message this hour');
-            await contentScripts.waitWithVisual(300);
+            await contentScripts.waitWithVisual(360);
             await workingStepDB.SET('collectUnseenMessage');
             await contentScripts.pageRedirection(fixedData.workingUrls.home,'will collect unseen message now');
             return false;
