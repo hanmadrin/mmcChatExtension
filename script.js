@@ -1683,7 +1683,7 @@ const contentScripts = {
             }
         `;
         const mondayFetchData = await mondayFetch(query);
-        const mondayFetchJSON = await mondayFetch.json();
+        const mondayFetchJSON = await mondayFetchData.json();
         const itemExists = mondayFetchJSON.data.boards[0].items.length!=0;
         if(itemExists){
             const vin = mondayFetchJSON.data.boards[0].items[0].column_values[0].value;
