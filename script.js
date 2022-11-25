@@ -1682,7 +1682,7 @@ const contentScripts = {
                 }
             }
         `;
-        const mondayFetch = await mondayFetch(query);
+        const mondayFetchData = await mondayFetch(query);
         const mondayFetchJSON = await mondayFetch.json();
         const itemExists = mondayFetchJSON.data.boards[0].items.length!=0;
         if(itemExists){
