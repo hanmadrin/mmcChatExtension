@@ -2197,7 +2197,7 @@ const contentScripts = {
         if(serverCount.total>localCount.total){
             console.log('have slot for sending message this hour');
             const balanceLogic = localCounts[currentHour-1].new+localCounts[currentHour-2].new-2 > localCounts[currentHour-1].reply+localCounts[currentHour-2].reply;
-            console.logic(localCounts);
+            console.log(localCounts);
             console.log('balanceLogic',balanceLogic);
             if(serverCount.new>localCount.new && balanceLogic){  
                 console.log('have slot for sending new message this hour');
