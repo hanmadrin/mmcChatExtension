@@ -1805,7 +1805,7 @@ const contentScripts = {
                                                 }
                                             `;
                                             const vinUpdateResponse = await mondayFetch(query1);
-                                            const vinUpdate = vinUpdateResponse.data.change_simple_column_value.id;
+                                            // const vinUpdate = vinUpdateResponse.data.change_simple_column_value.id;
                                             console.log('vin added to item')
                                             const query2 = `
                                                 mutation{
@@ -1815,7 +1815,7 @@ const contentScripts = {
                                                 }
                                             `;
                                             const statusUpdateResponse = await mondayFetch(query2);
-                                            const statusUpdate = statusUpdateResponse.data.change_simple_column_value.id;
+                                            // const statusUpdate = statusUpdateResponse.data.change_simple_column_value.id;
                                             console.log('status changed to Auto Vin')
                                         }
                                     }
