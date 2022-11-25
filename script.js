@@ -2381,12 +2381,28 @@ const contentScripts = {
                                     }
                                 }
                             `;
+                            const query3 = `
+                                mutation{
+                                    change_simple_column_value(board_id:${fixedData.mondayFetch.borEffortBoardId},
+                                    item_id:${item_id},
+                                    column_id: "${fixedData.mondayFetch.columnValuesIds.borEffortBoard.person}",
+                                    value: "${fixedData.mondayFetch.myAccountId}") 
+                                    {
+                                        id
+                                    }
+                                }
+                            `;
+                            // const itemDataJSON = await mondayFetch(query2);
+                            // const itemData = await itemDataJSON.json();
                             const firstMessageDataJSON = await mondayFetch(query);
                             const fbCodeJSON = await mondayFetch(query1);
                             const dateDataJSON = await mondayFetch(query2);
+                            const personDataJSON = await mondayFetch(query3);
+
                             const dateData = await dateDataJSON.json();
                             const fbCode = await fbCodeJSON.json();
                             const firstMessageData = await firstMessageDataJSON.json();
+                            const personData = await personDataJSON.json();
                             const metaInformation = await metaInformationDB.GET();
                             const domain = metaInformation.domain;
                             
