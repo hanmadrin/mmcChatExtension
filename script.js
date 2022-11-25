@@ -452,7 +452,8 @@ const fixedData = {
                 url: 'text7',
                 status: 'status',
                 date: 'date4',
-                fbCode: 'text84'
+                fbCode: 'text84',
+                vin: 'text6',
             },
             appraisalCounterBoard:{
                 status: 'status',
@@ -1623,6 +1624,87 @@ const contentScripts = {
             contentScripts.pageRedirection(fixedData.workingUrls.messages,'Not on message page');
         }
     },
+    getCarVinFromText : (text)=>{
+        text = text+'';
+        text = text.toUpperCase();
+        text = text.replace(/[^A-Z0-9]/g, '');
+        const vinRegex = /([A-HJ-NPR-Z\d]{8})([X\d]{1})([E-HJ-NPR-TV]{1})([A-HJ-NPR-Z\d]{2})([\d]{5})/;
+        const vinMatch = vinRegex.exec(text);
+        let vin = '';
+        if(vinMatch){
+            vin = vinMatch[0];
+            const beforeCheckDigit = vin.substring(0, 8);
+            const checkDigit = vin.substring(8, 9)=="X"?"10":parseInt(vin.substring(8, 9));
+            const afterCheckDigit = vin.substring(9);
+            const stringWithoutCheckDigit = beforeCheckDigit + afterCheckDigit;
+            const changeLetterToNumberValue = (letter)=>{
+                // no i,O,Q
+                letter = letter.replace(/[AJ]/g, '1');
+                letter = letter.replace(/[BKS]/g, '2');
+                letter = letter.replace(/[CLT]/g, '3');
+                letter = letter.replace(/[DMU]/g, '4');
+                letter = letter.replace(/[ENV]/g, '5');
+                letter = letter.replace(/[FW]/g, '6');
+                letter = letter.replace(/[GPX]/g, '7');
+                letter = letter.replace(/[HY]/g, '8');
+                letter = letter.replace(/[RZ]/g, '9');
+                return letter;
+            };
+            const numberWithoutCheckDigit = changeLetterToNumberValue(stringWithoutCheckDigit);
+            const numberWeights = [8, 7, 6, 5, 4, 3, 2, 10, 9, 8, 7, 6, 5, 4, 3, 2];
+            const numberArray = numberWithoutCheckDigit.split('');
+            let sum = 0;
+            for(let i=0; i<numberArray.length; i++){
+                sum += numberArray[i]*numberWeights[i];
+            }
+            const checkDigitCalculatedValue = sum%11;
+            if(checkDigitCalculatedValue==checkDigit){
+                return vin;
+            }else{
+                console.log('Wrong Vin');
+                return null;
+            }
+        }else{
+            console.log('No vin found');
+            return null;
+        }
+    },
+    itemNeedVin: async(item_id)=>{
+        const query =`
+            query{
+                boards(ids:[${fixedData.mondayFetch.borEffortBoardId}]){
+                    items(limit:1,ids:[${item_id}]){
+                        column_values(ids:["${fixedData.mondayFetch.columnValuesIds.borEffortBoard.vin}"]){
+                            id,  
+                            value
+                        }
+                    }
+                }
+            }
+        `;
+        const mondayFetch = await mondayFetch(query);
+        const mondayFetchJSON = await mondayFetch.json();
+        const itemExists = mondayFetchJSON.data.boards[0].items.length!=0;
+        if(itemExists){
+            const vin = mondayFetchJSON.data.boards[0].items[0].column_values[0].value;
+            return vin==null;
+        }else{
+            return false;
+        }
+        
+    },
+    getVinFromMessageData: async(messageData)=>{
+        // where message type is text get message
+        let messageTexts = '';
+        for(let i=0;i<messageData.length;i++){
+            const message = messageData[i];
+            if(message.type=='text'){
+                messageTexts += message.message;
+            }
+        }
+        const vin = contentScripts.getCarVinFromText(messageTexts);
+        return vin;
+    },
     readUnseenMessage: async ()=>{
         const workingStepDB = new ChromeStorage('workingStep');
         const readUnseenMessageDB = new ChromeStorage('readUnseenMessage');
@@ -1705,6 +1787,43 @@ const contentScripts = {
                                 }
                                 await readUnseenMessageCountDB.SET(0);
                                 await contentScripts.sendMessagesToServer(newMessageDatas);
+
+
+
+
+                                // read vin from message --start
+                                if(newMessageDatas.length>0){
+                                    const needVin = await contentScripts.itemNeedVin(item_id);
+                                    if(needVin){
+                                        const vin  = await contentScripts.getVinFromMessageData(newMessageDatas);
+                                        if(vin!=null){
+                                            const query1 = `
+                                                mutation{
+                                                    change_simple_column_value(board_id:${fixedData.mondayFetch.borEffortBoardId},item_id:${item_id},column_id: ${fixedData.mondayFetch.columnValuesIds.borEffortBoard.vin}, value: "${vin}") {
+                                                        id
+                                                    }
+                                                }
+                                            `;
+                                            const vinUpdateResponse = await mondayFetch(query1);
+                                            const vinUpdate = vinUpdateResponse.data.change_simple_column_value.id;
+                                            console.log('vin added to item')
+                                            const query2 = `
+                                                mutation{
+                                                    change_simple_column_value(board_id:${fixedData.mondayFetch.borEffortBoardId},item_id:${item_id},column_id: ${fixedData.mondayFetch.columnValuesIds.borEffortBoard.status}, value: "Auto Vin") {
+                                                        id
+                                                    }
+                                                }
+                                            `;
+                                            const statusUpdateResponse = await mondayFetch(query2);
+                                            const statusUpdate = statusUpdateResponse.data.change_simple_column_value.id;
+                                            console.log('status changed to Auto Vin')
+                                        }
+                                    }
+                                }
+                                //read vin from message --end
+
+
+
                             }else{
                                 contentScripts.showDataOnConsole('message is not valid to read or write');
                                 await contentScripts.markItemAsLinkGone();

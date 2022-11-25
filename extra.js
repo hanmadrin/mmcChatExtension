@@ -37,6 +37,7 @@ const openMarketPlaceMessage = async ()=>{
     }
 };
 const getCarVinFromText = (text)=>{
+    text = text+'';
     text = text.toUpperCase();
     text = text.replace(/[^A-Z0-9]/g, '');
     const vinRegex = /([A-HJ-NPR-Z\d]{8})([X\d]{1})([E-HJ-NPR-TV]{1})([A-HJ-NPR-Z\d]{2})([\d]{5})/;
@@ -83,3 +84,4 @@ const getCarVinFromText = (text)=>{
 // 1G1ZE5ST7HF216961
 // a = getCarVinFromText(` I get home I will take som1G1ZE5ST7  HF216961e pictures and se1G1ZE5ST7HF216962nd them to you but mechanical165431`);
 
+console.log(getCarVinFromText('5 F P Y K 3 F 6 7 K B 0 1 5 7 7 7'));
