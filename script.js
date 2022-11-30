@@ -819,6 +819,7 @@ const contentScripts = {
         return messageData;
     },
     getFileTypeFromUrl: (url)=>{
+        console.log(url);
         url = new URL(url);
         const path = url.pathname;
         const urlData = path.split('.');
