@@ -847,6 +847,9 @@ const contentScripts = {
                 const closeLinks = [...document.querySelectorAll('a')].filter((a)=>a.innerText=='Close'||a.innerText=='Cancel');
                 if(attachmentLinks.length==1 && closeLinks.length!=0){
                     url = attachmentLinks[0].href;
+                    if(url==''){
+                        console.log('url is empty');
+                    }
                     closeLinks[closeLinks.length-1].click();
                     break;
                 }
