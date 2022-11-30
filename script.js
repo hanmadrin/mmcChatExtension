@@ -788,6 +788,7 @@ const contentScripts = {
                             fileType = 'link';
                         }else{
                             console.log('has internal link');
+                            console.log(onpageUrl);
                             url = await contentScripts.retrieveAttachementUrl(document.querySelector(`[href="${onpageUrl}"]`));
                             fileType = contentScripts.getFileTypeFromUrl(url);
                         }
@@ -2266,7 +2267,7 @@ const contentScripts = {
                             return true;
                         }else{
                             console.log('dont have replies to send');
-                            await contentScripts.waitWithVisual(300);
+                            await contentScripts.waitWithVisual(600);
                             return false;
                         }
                     }
@@ -2292,7 +2293,7 @@ const contentScripts = {
             console.log(localCount);
             console.log(typeof(serverCount.total), typeof(localCount.total));
             console.log('dont have slot for sending message this hour');
-            await contentScripts.waitWithVisual(360);
+            await contentScripts.waitWithVisual(600);
             await workingStepDB.SET('collectUnseenMessage');
             await contentScripts.pageRedirection(fixedData.workingUrls.home,'will collect unseen message now');
             return false;
