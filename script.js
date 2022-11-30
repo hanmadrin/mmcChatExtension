@@ -780,15 +780,19 @@ const contentScripts = {
                     let url = '';
                     let fileType = '';
                     if(attachmentLink){
+                        console.log('has attachment');
                         const onpageUrl = attachmentLink.getAttribute('href');
                         if(onpageUrl.includes("https://") && !onpageUrl.includes("https://facebook.com")){
+                            console.log('has external link');
                             url = onpageUrl;
                             fileType = 'link';
                         }else{
+                            console.log('has internal link');
                             url = await contentScripts.retrieveAttachementUrl(document.querySelector(`[href="${onpageUrl}"]`));
                             fileType = contentScripts.getFileTypeFromUrl(url);
                         }
                     }else{
+                        console.log('no attachment');
                         url = imageSrc;
                         fileType = contentScripts.getFileTypeFromUrl(url);
                     }
