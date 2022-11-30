@@ -848,7 +848,8 @@ const contentScripts = {
                 if(attachmentLinks.length==1 && closeLinks.length!=0){
                     url = attachmentLinks[0].href;
                     if(url==''){
-                        console.log('url is empty');
+                        console.log('url is empty. Most likely this is a GIF Image');
+                        url = document.querySelector('#rootcontainer img.img').src;
                     }
                     closeLinks[closeLinks.length-1].click();
                     break;
