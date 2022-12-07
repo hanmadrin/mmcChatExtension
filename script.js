@@ -739,6 +739,13 @@ const contentScripts = {
         let messages = document.querySelectorAll(fixedData.workingSelectors.readMessage.SingleMessages);
         for(let i=0;i<messages.length;i++){
             messages = document.querySelectorAll(fixedData.workingSelectors.readMessage.SingleMessages);
+            while(true){
+                if(messages[i]){
+                    break;
+                }
+                await contentScripts.sleep(1000);
+                messages = document.querySelectorAll(fixedData.workingSelectors.readMessage.SingleMessages);
+            }
             let message = messages[i];
             const messageInfo = JSON.parse(message.getAttribute('data-store'));
             const timestamp = messageInfo.timestamp;
@@ -862,6 +869,7 @@ const contentScripts = {
             await essentials.sleep(5000);
             contentScripts.showDataOnConsole('Waiting for image to close');
             if(window.location.href.includes('https://m.facebook.com/messages/read/')){
+
                 break;
             }
         }
@@ -1705,6 +1713,8 @@ const contentScripts = {
     },
     getVinFromMessageData: async(messageData)=>{
         // where message type is text get message
+        console.log('getting vin from texts');
+        let vin = null;
         let messageTexts = '';
         for(let i=0;i<messageData.length;i++){
             const message = messageData[i];
@@ -1712,7 +1722,12 @@ const contentScripts = {
                 messageTexts += message.message;
             }
         }
-        const vin = contentScripts.getCarVinFromText(messageTexts);
+        vin = contentScripts.getCarVinFromText(messageTexts);
+        if(vin==null){
+            console.log('getting image from image');
+            // check if the image is valid(png,jpeg,jpg)
+
+        }
         return vin;
     },
     readUnseenMessage: async ()=>{
