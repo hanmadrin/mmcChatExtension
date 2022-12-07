@@ -743,7 +743,7 @@ const contentScripts = {
                 if(messages[i]){
                     break;
                 }
-                await contentScripts.sleep(1000);
+                await essentials.sleep(1000);
                 messages = document.querySelectorAll(fixedData.workingSelectors.readMessage.SingleMessages);
             }
             let message = messages[i];
