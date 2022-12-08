@@ -865,7 +865,8 @@ const contentScripts = {
                     if(document.body.innerText.includes('link you followed may be broken')){
                         console.log('we know this is a bug');
                         
-                        console.log(image.querySelector('img').getAttribute('src'))
+                        url = image.querySelector('img').getAttribute('src');
+                        break;
                     }else{
                         console.log('we know this is a bug but what????');
                     }
