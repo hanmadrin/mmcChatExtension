@@ -864,7 +864,8 @@ const contentScripts = {
                     // The link you followed may be broken, or the page may have been removed.
                     if(document.body.innerText.includes('link you followed may be broken')){
                         console.log('we know this is a bug');
-                        console.log(image);
+                        
+                        console.log(image.querySelector('img').getAttribute('src'))
                     }else{
                         console.log('we know this is a bug but what????');
                     }
