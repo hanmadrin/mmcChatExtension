@@ -796,7 +796,7 @@ const contentScripts = {
                         }else{
                             console.log('has internal link');
                             console.log(onpageUrl);
-                            url = (await contentScripts.retrieveAttachementUrl(document.querySelector(`[href="${onpageUrl}"]`))) || imageSrc;
+                            url = (await contentScripts.retrieveAttachementUrl(document.querySelector(`[href="${onpageUrl}"]`)));
                             fileType = contentScripts.getFileTypeFromUrl(url);
                         }
                     }else{
@@ -864,7 +864,7 @@ const contentScripts = {
             }else{
                 // The link you followed may be broken, or the page may have been removed.
                 if(document.body.innerText.includes('The link you followed may be broken, or the page may have been removed.')){
-                    return null;
+                    console.log('we know this is a bug');
                 }
                 contentScripts.showDataOnConsole('Waiting for page to load');
             }
