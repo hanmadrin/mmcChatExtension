@@ -860,15 +860,16 @@ const contentScripts = {
                     }
                     closeLinks[closeLinks.length-1].click();
                     break;
+                }else{
+                    // The link you followed may be broken, or the page may have been removed.
+                    if(document.body.innerText.includes('link you followed may be broken')){
+                        console.log('we know this is a bug');
+                        console.log(image);
+                    }else{
+                        console.log('we know this is a bug but what????');
+                    }
                 }
             }else{
-                // The link you followed may be broken, or the page may have been removed.
-                if(document.body.innerText.includes('link you followed may be broken')){
-                    console.log('we know this is a bug');
-                    console.log(image);
-                }else{
-                    console.log('we know this is a bug but what????');
-                }
                 contentScripts.showDataOnConsole('Waiting for page to load');
             }
         }
