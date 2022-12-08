@@ -866,6 +866,7 @@ const contentScripts = {
                         console.log('we know this is a bug');
                         
                         url = image.querySelector('img').getAttribute('src');
+                        history.back();
                         break;
                     }else{
                         console.log('we know this is a bug but what????');
