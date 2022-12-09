@@ -2196,7 +2196,7 @@ const contentScripts = {
         const hours = Object.keys(messageCounter);
         for(let i=0;i<hours.length;i++){
             const hour = hours[i];
-            if(hour!=currentHour-2 || hour!=currentHour-1 || hour!=currentHour){
+            if(hour!=currentHour-2 && hour!=currentHour-1 && hour!=currentHour){
                 console.log('hour changes');
                 delete messageCounter[hour];
             }
