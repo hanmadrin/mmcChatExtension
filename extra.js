@@ -4298,7 +4298,7 @@ console.log(isBStringSubString({
 	}
 });
 
-await fetch('https://vision.googleapis.com/v1/images:annotate?key=AIzaSyAc7hh8rmLA20mMGbF1okNyAcC4sgPGbSQ', {
+await fetch('https://vision.googleapis.com/v1/images:annotate?key=', {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json'

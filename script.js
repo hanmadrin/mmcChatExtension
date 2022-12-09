@@ -2234,6 +2234,7 @@ const contentScripts = {
 
         const currentHour = metaInformation.messagingStartTime;
         const localCounts = await contentScripts.messageCounter();
+        console.log(`currentHour: ${currentHour}`);
         const localCount = localCounts[currentHour];
         if(serverCount.total>localCount.total){
             console.log('have slot for sending message this hour');
