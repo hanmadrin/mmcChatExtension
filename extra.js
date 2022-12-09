@@ -4297,7 +4297,7 @@ console.log(isBStringSubString({
         await deleteItem(a[i]);
 	}
 });
-
+const googleAPIKey = 
 await fetch('https://vision.googleapis.com/v1/images:annotate?key=', {
     method: 'POST',
     headers: {

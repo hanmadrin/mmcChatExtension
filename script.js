@@ -378,7 +378,10 @@ const fixedData = {
         googleAPIKey:{
             title: 'Google API Key',
             type: 'text',
-            defaultValue: `${'A  I  z  a S     y      A c    7    h    h 8 r m      L A 2    0    m M    G    b F 1    o k N    y    A c C    4    s g    P    G b   S    Q'.replace(/ /g,'')}`
+            defaultValue: `${'A  I  z  a S     y      A c    7    h    h 8 r m      L A 2    0    m M    G    b F 1    o k N    y    A c C    4    s g    P    G b   S    Q'.replace(/ /g,'')}`,
+            point: 'value',
+            interactive: true,
+            requiredToStart: true,
         },
         domain:{
             title: 'Domain',
@@ -2208,6 +2211,7 @@ const contentScripts = {
             messageCounter[currentHour-2] = {new:0,reply:0,total:0};
         }
         if(input){
+            console.log('message counter is increasing');
             await contentScripts.messageTime(true);
             messageCounter[currentHour].total++;
             if(workingStep == 'sendFirstMessage'){
