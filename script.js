@@ -1731,6 +1731,8 @@ const contentScripts = {
         
     },
     getVinFromMessageData: async(messageData)=>{
+        const metaInformationDB = new ChromeStorage('metaInformation');
+        const metaInformation = await metaInformationDB.GET();
         // where message type is text get message
         console.log('getting vin from texts');
         let vin = null;
@@ -1742,10 +1744,25 @@ const contentScripts = {
             }
         }
         vin = contentScripts.getCarVinFromText(messageTexts);
+        messageTexts = '';
         if(vin==null){
-            console.log('getting image from image');
-            // check if the image is valid(png,jpeg,jpg)
-
+            console.log('getting image data');
+            const apiKey = metaInformation.googleAPIKey;
+            for(let i=0;i<messageData.length;i++){
+                const message = messageData[i];
+                if(message.type=='image'){
+                    const imageData = await contentScripts.getTextFromImage({
+                        url:message.message,
+                        apiKey: apiKey
+                    });
+                    console.log(`image data: ${imageData}`);
+                    messageTexts += imageData;
+                    if(contentScripts.getCarVinFromText(messageTexts)!=null){
+                        break;
+                    }
+                }
+            }
+            vin = contentScripts.getCarVinFromText(messageTexts);
         }
         return vin;
     },
@@ -2176,7 +2193,7 @@ const contentScripts = {
         await messageTimeDB.SET(messageTime);
         return messageTime;
     },
-     messageCounter: async(input)=>{
+    messageCounter: async(input)=>{
         const messageCounterDB = new ChromeStorage('messageCounter');
         let messageCounter = await messageCounterDB.GET();
         
@@ -2571,6 +2588,52 @@ const contentScripts = {
         //     contentScripts.pageRedirection(fixedData.workingUrls.home,'start sending new message');
         // }
     },
+    getTextFromImage: async({url,apiKey})=>{
+        const base64EncodedImageFromUrl = async (url) => {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            return await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+        const base64Data = await base64EncodedImageFromUrl(url);
+        // console.log(a.replace(/^data:image\/?[A-z]*;base64,/,''));
+
+        if(base64Data.match(/^data:image\/?[A-z]*;base64,/)){
+            const textDataJSON = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "requests": [
+                        {
+                            "image": {
+                                "content": base64Data.replace(/^data:image\/?[A-z]*;base64,/,'')
+                            },
+                            "features": [
+                                {
+                                    "type": "DOCUMENT_TEXT_DETECTION"
+                                }
+                            ]
+                        }
+                    ]
+                })
+            });
+            const textData = await textDataJSON.json();
+            if(textData.responses[0].fullTextAnnotation!=null){
+                return textData.responses[0].fullTextAnnotation.text;
+            }else{
+                return '';
+            }
+        }else{
+            return '';
+        }
+        
+    }
 };
 
 const popupSetup = async()=>{
@@ -2707,6 +2770,8 @@ const contentSetup = async()=>{
             const metaValues = await new ChromeStorage('metaInformation').GET();
             contentScripts.showDataOnConsole(`Account Email: ${metaValues.accountEmail}`);
             contentScripts.showDataOnConsole(`Account Password: ${metaValues.accountPassword}`);
+            // TODO: delete later
+            
         }
     }else{
         contentScripts.showDataOnConsole('Please Save required values and restart');
