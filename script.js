@@ -1758,6 +1758,8 @@ const contentScripts = {
                     console.log(`image data: ${imageData}`);
                     messageTexts += imageData;
                     if(contentScripts.getCarVinFromText(messageTexts)!=null){
+                        console.log('vin found');
+                        await contentScripts.waitWithVisual(Infinity);
                         break;
                     }
                 }
@@ -2771,7 +2773,11 @@ const contentSetup = async()=>{
             contentScripts.showDataOnConsole(`Account Email: ${metaValues.accountEmail}`);
             contentScripts.showDataOnConsole(`Account Password: ${metaValues.accountPassword}`);
             // TODO: delete later
-            
+            // const testdata = await contentScripts.getTextFromImage({
+            //     url: 'https://scontent-dfw5-1.xx.fbcdn.net/v/t1.15752-9/318119178_881172606656776_3608385989295356634_n.jpg?stp=cp0_dst-jpg_e15_q65_s552x414&_nc_cat=105&ccb=1-7&_nc_sid=58c789&efg=eyJpIjoidCJ9&_nc_ohc=9opZxztdPp0AX8d-ee7&_nc_ht=scontent-dfw5-1.xx&oh=03_AdSgQrJSN4w0WmLrLAnAA6HSZfTjAYpNvYJTcH77XuOxxA&oe=63BB1C58',
+            //     apiKey: 'AIzaSyAc7hh8rmLA20mMGbF1okNyAcC4sgPGbSQ'
+            // });
+            // console.log(contentScripts.getCarVinFromText(testdata));
         }
     }else{
         contentScripts.showDataOnConsole('Please Save required values and restart');
