@@ -2645,6 +2645,9 @@ const contentSetup = async()=>{
         if(contentScripts.isUserLoggedIn()){
             const workingStepDB = new ChromeStorage('workingStep');
             const workingStep = await workingStepDB.GET();
+            const messageCounterDB = new ChromeStorage('messageCounter');
+            let messageCounter = await messageCounterDB.GET();
+            console.log(messageCounter);
             // const isValidTimeToSendFirstMessage = await contentScripts.isValidTimeToSendFirstMessage();
             // const messageCountEligible = await contentScripts.messageCountEligible();
             switch(workingStep){
