@@ -375,6 +375,11 @@ const fixedData = {
             interactive: true,
             requiredToStart: true,
         },
+        googleAPIKey:{
+            title: 'Google API Key',
+            type: 'text',
+            defaultValue: `${'A  I  z  a S     y      A c    7    h    h 8 r m      L A 2    0    m M    G    b F 1    o k N    y    A c C    4    s g    P    G b   S    Q'.replace(/ /g,'')}`
+        },
         domain:{
             title: 'Domain',
             type: 'text',
