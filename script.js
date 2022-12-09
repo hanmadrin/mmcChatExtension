@@ -2168,7 +2168,7 @@ const contentScripts = {
         await messageTimeDB.SET(messageTime);
         return messageTime;
     },
-    messageCounter: async(input)=>{
+     messageCounter: async(input)=>{
         const messageCounterDB = new ChromeStorage('messageCounter');
         let messageCounter = await messageCounterDB.GET();
         
@@ -2178,6 +2178,7 @@ const contentScripts = {
         const metaInformation = await metaInformationDB.GET();
         const currentHour = metaInformation.messagingStartTime;
         if(messageCounter==null){
+            console.log('program will be here once in a lifetime');
             messageCounter = {
                 [currentHour]: {new:0,reply:0,total:0},
                 [currentHour-1]: {new:0,reply:0,total:0},
@@ -2187,7 +2188,8 @@ const contentScripts = {
         const hours = Object.keys(messageCounter);
         for(let i=0;i<hours.length;i++){
             const hour = hours[i];
-            if(hour<currentHour-2){
+            if(hour!=currentHour-2 || hour!=currentHour-1 || hour!=currentHour){
+                console.log('hour changes');
                 delete messageCounter[hour];
             }
         }
@@ -2207,9 +2209,12 @@ const contentScripts = {
                 messageCounter[currentHour].new++;
             }else if(workingStep == 'sendReplyMessage'){
                 messageCounter[currentHour].reply++;
+            }else{
+                console.log('believe me: Program is not working properly');
             }
         }
         await messageCounterDB.SET(messageCounter);
+        console.log(messageCounter);
         return messageCounter;
     },
     prepareOutgoingMessage: async()=>{
@@ -2443,8 +2448,8 @@ const contentScripts = {
                             const domain = metaInformation.domain;
                             
                         }
-                        await contentScripts.messageCounter(true);
                         await contentScripts.markMessageAsSent(id);
+                        await contentScripts.messageCounter(true);
                         await workingStepDB.SET('collectUnseenMessage');
                         await contentScripts.pageRedirection(fixedData.workingUrls.home,'will collect unseen message now');
                         return true;

@@ -4258,3 +4258,64 @@ console.log(isBStringSubString({
     aString: 'Rimon',
     bString: 'im8n'
 }));
+
+(async()=>{
+	deleteItem = async(item_id)=>{
+        console.log('workinh on '+ item_id)
+        const query = `
+            mutation {
+                archive_item(item_id: ${item_id}) {
+                    id
+                }
+            }
+        `;
+        mondayJSON = await fetch (`https://api.monday.com/v2`,
+            {
+                cache: "no-cache",
+                method: 'post',
+                headers:{
+                    'Content-Type': 'application/json',
+                    'Authorization': 'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjE3MjU1MTMxNiwidWlkIjozMDI3MzE5NCwiaWFkIjoiMjAyMi0wNy0yN1QyMzowMzowNC4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6ODg0NzExMCwicmduIjoidXNlMSJ9.OsVnuCUSnm-FF21sjAND10cWEKN9-UIqIkNx6Rz8Bfo'
+                },
+                body: JSON.stringify({query})
+            }
+        );
+        console.log(await mondayJSON.json())
+        serverJSON = await fetch(`https://xentola.com/extension/serverLinkGoneUpdate`,{
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        item_id: `${item_id}`,
+                        fb_id: ``
+                    })
+        });
+        console.log(await serverJSON.json())
+    }
+	for(let i=1;i<a.length;i++){
+        await deleteItem(a[i]);
+	}
+});
+
+await fetch('https://vision.googleapis.com/v1/images:annotate?key=AIzaSyAc7hh8rmLA20mMGbF1okNyAcC4sgPGbSQ', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        "requests": [
+            {
+                "image": {
+                    "content": imageContent
+                },
+                "features": [
+                    {
+                        "type": "DOCUMENT_TEXT_DETECTION"
+                    }
+                ]
+            }
+        ]
+    })
+});
+
