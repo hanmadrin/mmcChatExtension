@@ -2245,6 +2245,7 @@ const contentScripts = {
         const localCounts = await contentScripts.messageCounter();
         console.log(`currentHour: ${currentHour}`);
         const localCount = localCounts[currentHour];
+        console.log('localCount',localCount);
         if(serverCount.total>localCount.total){
             console.log('have slot for sending message this hour');
             const balanceLogic = localCounts[currentHour-1].new+localCounts[currentHour-2].new-2 <= localCounts[currentHour-1].reply+localCounts[currentHour-2].reply;
