@@ -1759,7 +1759,9 @@ const contentScripts = {
                     messageTexts += imageData;
                     if(contentScripts.getCarVinFromText(messageTexts)!=null){
                         console.log('vin found');
-                        await contentScripts.waitWithVisual(Infinity);
+                        const consoleBoard = document.getElementById(fixedData.workingSelectors.content.console);
+                        consoleBoard.style.backgroundColor = 'green';
+                        await contentScripts.waitWithVisual(10000);
                         break;
                     }
                 }
