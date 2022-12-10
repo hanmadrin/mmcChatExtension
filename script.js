@@ -1761,7 +1761,7 @@ const contentScripts = {
                         console.log('vin found');
                         const consoleBoard = document.getElementById(fixedData.workingSelectors.content.console);
                         consoleBoard.style.backgroundColor = 'green';
-                        await contentScripts.waitWithVisual(10000);
+                        await contentScripts.waitWithVisual(5);
                         break;
                     }
                 }
