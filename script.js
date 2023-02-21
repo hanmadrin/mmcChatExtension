@@ -761,10 +761,15 @@ const contentScripts = {
             const text = message.querySelector(':scope > span');
             let attachment = message.querySelector(':scope > div');
             if(text.children.length!=0){
+                // filter non ascii characters
+                // max length 1000 char
+                let messagetext = text.innerText;
+                messagetext = messagetext.replace(/[^\x00-\x7F]/g, "");
+                messagetext = messagetext.substring(0,999);
                 const textData = {
                     type: 'text',
                     sent_from,
-                    message: text.innerText,
+                    message: messagetext,
                     timestamp,
                     fb_id: accountInfo.id,
                     status: 'done'
