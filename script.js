@@ -2399,7 +2399,7 @@ const contentScripts = {
             const item_id = sendOutgoingMessage.item_id;
             const id = sendOutgoingMessage.id;
             const message = sendOutgoingMessage.message;
-            if(window.location.href!=`${fixedData.workingUrls.sellerMessageSuffix}${fb_post_id}/`){
+            if(!window.location.href.includes(`${fixedData.workingUrls.sellerMessageSuffix}${fb_post_id}/`)){
                 contentScripts.pageRedirection(`${fixedData.workingUrls.sellerMessageSuffix}${fb_post_id}/`,'Redirecting to seller message page');
                 return false;
             }else{
