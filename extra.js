@@ -229,3 +229,5 @@
 // }
 
 
+DATABASE_USERNAME = 'rimo'
+DATABASE_PASSWORD = 'p@ssword69'

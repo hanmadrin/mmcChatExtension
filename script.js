@@ -447,6 +447,7 @@ const fixedData = {
     },
     limits:{
         loadMessages: 10,
+        soldButValidAsSellerMessageCount: 2,
         // lastUnreadMesaage: (86400*3),
     },
     mondayFetch:{
@@ -958,7 +959,23 @@ const contentScripts = {
         }
         return messageDataResponse;
     },
-    isCurrentMessageValid: ()=>{
+    sellerMessageCount: async (fb_post_id)=>{
+        const metaInformationDB = new ChromeStorage('metaInformation');
+        const metaInfromation = await metaInformationDB.GET();
+        const domain = metaInfromation.domain;
+        const messageCountJSON = await fetch(`${domain}/extension/sellerMessageCount`,{
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({fb_post_id: `${fb_post_id}`})
+        });
+        const messageCountResponse = await messageCountJSON.json();
+        console.log(messageCountResponse);
+        console.log(messageCountResponse.count);
+        return messageCountResponse.count;
+    },
+    isCurrentMessageValid: async (fb_post_id)=>{
         // "You named the conversation"
         // "You changed the conversation picture"
         // "waiting for your response about this listing"
@@ -981,6 +998,13 @@ const contentScripts = {
             for(let j=0;j<invalidIndicators.length;j++){
                 const indicator = invalidIndicators[j];
                 if(message.includes(indicator)){
+                    if(indicator.includes('sold')){
+                        // TODO:: check if the item is sold to us
+                        const sellerMessageCount = await contentScripts.sellerMessageCount(fb_post_id);
+                        if(sellerMessageCount>fixedData.limits.soldButValidAsSellerMessageCount){
+                            return true;
+                        }
+                    }
                     return false;
                 }
             }
@@ -1096,7 +1120,7 @@ const contentScripts = {
         const unsentMessagesData = await unsentMessagesDataJSON.json();
         return unsentMessagesData.messages;
     },
-    isValidMessageInSellerMessage: ()=>{
+    isValidMessageInSellerMessage: async (fb_post_id)=>{
         // "left the group"
         // "Sold"
         // "removed the item from Marketplace"
@@ -1108,7 +1132,18 @@ const contentScripts = {
             sold = soldHolder.innerText.includes('Sold');
         }
         console.log(`error: ${error}, removed: ${removed}, sold: ${sold}`);
-        return !(error || removed || sold);
+        if (error) return false;
+        if (removed) return false;
+        if (sold){
+            const sellerMessageCount = await contentScripts.sellerMessageCount(fb_post_id);
+            if(sellerMessageCount>fixedData.limits.soldButValidAsSellerMessageCount){
+                return true;
+            }else{
+                return false;
+            }
+        }
+        return true;
+        // return !(error || removed || sold);
     },
     markMessageAsSent: async ( messageId)=>{
         const metaInformationDB = new ChromeStorage('metaInformation');
@@ -1819,7 +1854,8 @@ const contentScripts = {
                         const valid = validData.valid;
                         if(valid){
                             await essentials.sleep(2000);
-                            const isMessageValid = contentScripts.isCurrentMessageValid();
+                            // const item_id = await contentScripts.itemIdByPostId(itemData.fb_post_id);
+                            const isMessageValid = await contentScripts.isCurrentMessageValid(itemData.fb_post_id);
                             if(isMessageValid){
                                 contentScripts.showDataOnConsole('message is valid to read or write');
                                 const messageDatas = await contentScripts.readCurrentMessage();
@@ -1977,7 +2013,7 @@ const contentScripts = {
                     contentScripts.pageRedirection(`${fixedData.workingUrls.sellerMessageSuffix}${fb_post_id}/`,'Redirecting to seller message page');
                 }
             }else{
-                const validTosendMessage = contentScripts.isValidMessageInSellerMessage();
+                const validTosendMessage = await contentScripts.isValidMessageInSellerMessage(fb_post_id);
                 if(validTosendMessage){
                     const messages = await contentScripts.getUnsentMessagesByPostId(fb_post_id);
                     if(messages.length!=0){
@@ -2403,7 +2439,7 @@ const contentScripts = {
                 contentScripts.pageRedirection(`${fixedData.workingUrls.sellerMessageSuffix}${fb_post_id}/`,'Redirecting to seller message page');
                 return false;
             }else{
-                const validTosendMessage = contentScripts.isValidMessageInSellerMessage();
+                const validTosendMessage = await contentScripts.isValidMessageInSellerMessage(fb_post_id);
                 if(validTosendMessage){
                     // sending message
                     await essentials.sleep(3000);
