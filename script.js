@@ -411,7 +411,7 @@ const fixedData = {
     },
     workingUrls:{
         messages: 'https://m.facebook.com/messages/?folder=unread',
-        home: 'https://m.facebook.com/home.php#_=_',
+        home: 'https://m.facebook.com/',
         itemSuffix: 'https://m.facebook.com/marketplace/item/',
         unknownMessageSuffix: 'https://m.facebook.com/messages/read/?tid=cid.g.',
         sellerMessageSuffix: 'https://m.facebook.com/marketplace/message_seller/',
