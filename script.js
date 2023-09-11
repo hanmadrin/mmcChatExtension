@@ -252,7 +252,7 @@ class ChromeStorageDB{
         return db;
     }
 }
-
+const fbSubDom = 'm';
 const essentials = {
     sleep: (ms)=>{
         return new Promise(resolve=>{
@@ -270,7 +270,8 @@ const mondayFetch = async (query) => {
             method: 'post',
             headers:{
                 'Content-Type': 'application/json',
-                'Authorization': metaInformation.defaultAPI
+                'Authorization': metaInformation.defaultAPI,
+                'API-Version' : '2023-07'
             },
             body: JSON.stringify({query})
         }
@@ -410,11 +411,11 @@ const fixedData = {
 
     },
     workingUrls:{
-        messages: 'https://m.facebook.com/messages/?folder=unread',
-        home: 'https://m.facebook.com/',
-        itemSuffix: 'https://m.facebook.com/marketplace/item/',
-        unknownMessageSuffix: 'https://m.facebook.com/messages/read/?tid=cid.g.',
-        sellerMessageSuffix: 'https://m.facebook.com/marketplace/message_seller/',
+        messages:  `https://${fbSubDom}.facebook.com/messages/?folder=unread`,
+        home: `https://${fbSubDom}.facebook.com/`,
+        itemSuffix: `https://${fbSubDom}.facebook.com/marketplace/item/`,
+        unknownMessageSuffix: `https://${fbSubDom}.facebook.com/messages/read/?tid=cid.g.`,
+        sellerMessageSuffix: `https://${fbSubDom}.facebook.com/marketplace/message_seller/`,
     },
     workingSelectors:{
         messages:{
@@ -863,7 +864,7 @@ const contentScripts = {
         while(true){
             await essentials.sleep(5000);
             contentScripts.showDataOnConsole('Waiting for image to load');
-            if(window.location.href.includes('https://m.facebook.com/messages/attachment_preview') || window.location.href.includes('https://m.facebook.com/messages/attachment_confirm')){
+            if(window.location.href.includes(`https://${fbSubDom}.facebook.com/messages/attachment_preview`) || window.location.href.includes(`https://${fbSubDom}.facebook.com/messages/attachment_confirm`)){
                 const attachmentLinks = [...document.querySelectorAll('a')].filter((a)=>a.innerText=='Download'||a.innerText=='Open');
                 const closeLinks = [...document.querySelectorAll('a')].filter((a)=>a.innerText=='Close'||a.innerText=='Cancel');
                 if(attachmentLinks.length==1 && closeLinks.length!=0){
@@ -893,7 +894,7 @@ const contentScripts = {
         while(true){
             await essentials.sleep(5000);
             contentScripts.showDataOnConsole('Waiting for image to close');
-            if(window.location.href.includes('https://m.facebook.com/messages/read/')){
+            if(window.location.href.includes(`https://${fbSubDom}.facebook.com/messages/read/`)){
 
                 break;
             }
