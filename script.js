@@ -412,7 +412,7 @@ const fixedData = {
     },
     workingUrls:{
         messages:  `https://${fbSubDom}.facebook.com/messages/?folder=unread`,
-        home: `https://${fbSubDom}.facebook.com/`,
+        home: `https://${fbSubDom}.facebook.com/home.php`,
         itemSuffix: `https://${fbSubDom}.facebook.com/marketplace/item/`,
         unknownMessageSuffix: `https://${fbSubDom}.facebook.com/messages/read/?tid=cid.g.`,
         sellerMessageSuffix: `https://${fbSubDom}.facebook.com/marketplace/message_seller/`,
