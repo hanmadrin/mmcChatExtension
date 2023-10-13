@@ -412,7 +412,7 @@ const fixedData = {
     },
     workingUrls:{
         messages:  `https://${fbSubDom}.facebook.com/messages/?folder=unread`,
-        home: `https://${fbSubDom}.facebook.com/home.php`,
+        home: `https://${fbSubDom}.facebook.com/`,
         itemSuffix: `https://${fbSubDom}.facebook.com/marketplace/item/`,
         unknownMessageSuffix: `https://${fbSubDom}.facebook.com/messages/read/?tid=cid.g.`,
         sellerMessageSuffix: `https://${fbSubDom}.facebook.com/marketplace/message_seller/`,
@@ -2377,8 +2377,6 @@ const contentScripts = {
                         }else{
                             console.log('dont have replies to send');
                             await contentScripts.waitWithVisual(600);
-                            // await workingStepDB.SET('collectUnseenMessage');
-                            await contentScripts.pageRedirection(fixedData.workingUrls.home,'will collect unseen message now');
                             return false;
                         }
                     }
