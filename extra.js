@@ -1,4 +1,13 @@
+// {/* <div><div class="_2jow _3fc-"><div class="_66m3 _3fcy">To contact a seller on Marketplace, verify additional items.</div></div></div> */}
+
+
+
 // const openMarketPlaceMessage = async ()=>{
+//     const sleep = async(ms)=>{
+//         return new Promise(resolve=>{
+//             setTimeout(resolve, ms);
+//         });
+//     }
 //     const messengerItemsHolderSelector = `[aria-label="Chats"] .${('alzwoclg cqf1kptm cgu29s5g i15ihif8 sl4bvocy lq84ybu9 efm7ts3d om3e55n1 mfclru0v').split(' ').join('.')}`;
 //     //wait for message item holder to appear
 //     while(true){
@@ -229,5 +238,8 @@
 // }
 
 
-DATABASE_USERNAME = 'rimo'
-DATABASE_PASSWORD = 'p@ssword69'
+// DATABASE_USERNAME = 'rimo'
+// DATABASE_PASSWORD = 'p@ssword69'
+
+
+

@@ -2377,6 +2377,8 @@ const contentScripts = {
                         }else{
                             console.log('dont have replies to send');
                             await contentScripts.waitWithVisual(600);
+                            await workingStepDB.SET('collectUnseenMessage');
+                            await contentScripts.pageRedirection(fixedData.workingUrls.home,'will collect unseen message now');
                             return false;
                         }
                     }
