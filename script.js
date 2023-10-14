@@ -2403,8 +2403,8 @@ const contentScripts = {
             console.log(typeof(serverCount.total), typeof(localCount.total));
             console.log('dont have slot for sending message this hour');
             await contentScripts.waitWithVisual(600);
-            await workingStepDB.SET('collectUnseenMessage');
-            await contentScripts.pageRedirection(fixedData.workingUrls.home,'will collect unseen message now');
+            // await workingStepDB.SET('collectUnseenMessage');
+            // await contentScripts.pageRedirection(fixedData.workingUrls.home,'will collect unseen message now');
             return false;
         }
     },
