@@ -278,12 +278,6 @@ const mondayFetch = async (query) => {
     );
     return mondayResponse;
 }
-
-const homeUrl = (async()=>{
-    const metaInformationDB = new ChromeStorage('metaInformation');
-    const metaInformation = await metaInformationDB.GET();
-    return metaInformation.homeUrl
-})();
 const fixedData = {
     metaInformation: {
         deviceId:{
