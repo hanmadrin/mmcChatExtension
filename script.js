@@ -278,6 +278,9 @@ const mondayFetch = async (query) => {
     );
     return mondayResponse;
 }
+const metaInformationDB = new ChromeStorage('metaInformation');
+const metaInformation = await metaInformationDB.GET();
+const homeUrl = metaInformation.homeUrl;
 const fixedData = {
     metaInformation: {
         deviceId:{
@@ -387,7 +390,15 @@ const fixedData = {
         domain:{
             title: 'Domain',
             type: 'text',
-            defaultValue: 'https://xentola.com',
+            defaultValue: 'https://weuit.com',
+            point: 'value',
+            interactive: true,
+            requiredToStart: true,
+        },
+        homeUrl:{
+            title: 'Home Url',
+            type: 'text',
+            defaultValue: 'https://m.facebook.com/home.php',
             point: 'value',
             interactive: true,
             requiredToStart: true,
@@ -412,7 +423,7 @@ const fixedData = {
     },
     workingUrls:{
         messages:  `https://${fbSubDom}.facebook.com/messages/?folder=unread`,
-        home: `https://${fbSubDom}.facebook.com/home.php`,
+        home: homeUrl,
         itemSuffix: `https://${fbSubDom}.facebook.com/marketplace/item/`,
         unknownMessageSuffix: `https://${fbSubDom}.facebook.com/messages/read/?tid=cid.g.`,
         sellerMessageSuffix: `https://${fbSubDom}.facebook.com/marketplace/message_seller/`,
