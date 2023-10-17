@@ -278,9 +278,12 @@ const mondayFetch = async (query) => {
     );
     return mondayResponse;
 }
-const metaInformationDB = new ChromeStorage('metaInformation');
-const metaInformation = await metaInformationDB.GET();
-const homeUrl = metaInformation.homeUrl;
+
+const homeUrl = (async()=>{
+    const metaInformationDB = new ChromeStorage('metaInformation');
+    const metaInformation = await metaInformationDB.GET();
+    return metaInformation.homeUrl
+})();
 const fixedData = {
     metaInformation: {
         deviceId:{
@@ -423,7 +426,11 @@ const fixedData = {
     },
     workingUrls:{
         messages:  `https://${fbSubDom}.facebook.com/messages/?folder=unread`,
-        home: homeUrl,
+        home: async()=>{
+            const metaInformationDB = new ChromeStorage('metaInformation');
+            const metaInformation = await metaInformationDB.GET();
+            return metaInformation.homeUrl
+        },
         itemSuffix: `https://${fbSubDom}.facebook.com/marketplace/item/`,
         unknownMessageSuffix: `https://${fbSubDom}.facebook.com/messages/read/?tid=cid.g.`,
         sellerMessageSuffix: `https://${fbSubDom}.facebook.com/marketplace/message_seller/`,
@@ -1325,7 +1332,7 @@ const contentScripts = {
                 const newPost = await newPostJSON.json();
                 newPost.has_unsent_message = true;
                 await sendNewSellerMessageDB.SET(newPost);
-                contentScripts.pageRedirection(fixedData.workingUrls.home,'New Post to message');
+                contentScripts.pageRedirection(await fixedData.workingUrls.home(),'New Post to message');
             }else if(newPostJSON.status==201){
                 contentScripts.showDataOnConsole((await newPostJSON.json()).message)
             }
@@ -1359,7 +1366,7 @@ const contentScripts = {
                 //         const LinkGoneData = await LinkGoneDataJSON.json();
                         
                 //         await sendNewSellerMessageDB.SET(null);               
-                //         contentScripts.pageRedirection(fixedData.workingUrls.home,'Link gone getting new one');
+                //         contentScripts.pageRedirection(await fixedData.workingUrls.home(),'Link gone getting new one');
                 //     }catch(e){
                 //         contentScripts.showDataOnConsole('Error marking as "Link Gone"');
                 //     }
@@ -1427,7 +1434,7 @@ const contentScripts = {
                             console.log('first message action saved');
                             await sendNewSellerMessageDB.SET(null);       
                             await workingStepDB.SET('collectUnseenMessage');
-                            contentScripts.pageRedirection(fixedData.workingUrls.home,'Message Sent and unseen messages started');
+                            contentScripts.pageRedirection(await fixedData.workingUrls.home(),'Message Sent and unseen messages started');
                         }else{
                             contentScripts.showDataOnConsole('Error marking as "1st Message"');
                         }
@@ -1441,7 +1448,7 @@ const contentScripts = {
                     // markAsLinkGone replacement
                     await contentScripts.markItemAsLinkGone(sendNewSellerMessage.item_id);
                     await sendNewSellerMessageDB.SET(null);               
-                    contentScripts.pageRedirection(fixedData.workingUrls.home,'Link gone getting new one');
+                    contentScripts.pageRedirection(await fixedData.workingUrls.home(),'Link gone getting new one');
                     // await markAsLinkGone();
                 }else{
                     if(window.location.href==`${fixedData.workingUrls.itemSuffix}${sendNewSellerMessage.fb_post_id}`){
@@ -1476,7 +1483,7 @@ const contentScripts = {
                         //     // markAsLinkGone replacement
                         //     await contentScripts.markItemAsLinkGone(sendNewSellerMessage.item_id);
                         //     await sendNewSellerMessageDB.SET(null);               
-                        //     contentScripts.pageRedirection(fixedData.workingUrls.home,'Link gone getting new one');
+                        //     contentScripts.pageRedirection(await fixedData.workingUrls.home(),'Link gone getting new one');
                         //     // await markAsLinkGone();
                         // }else if(document.querySelector('form [name="message"]')){
                         //     contentScripts.showDataOnConsole('sending message');
@@ -1511,7 +1518,7 @@ const contentScripts = {
                         //             removeLeadButton.innerText = 'Remove Lead';
                         //             removeLeadButton.onclick = async ()=>{
                         //                 await sendNewSellerMessageDB.SET(null); 
-                        //                 contentScripts.pageRedirection(fixedData.workingUrls.home,'Message Sent and unseen messages started');
+                        //                 contentScripts.pageRedirection(await fixedData.workingUrls.home(),'Message Sent and unseen messages started');
                         //             };
                         //             consoleBoard.append(tryAgainButton,removeLeadButton);
                         //             return null;
@@ -1550,7 +1557,7 @@ const contentScripts = {
                             // markAsLinkGone replacement
                             await contentScripts.markItemAsLinkGone(sendNewSellerMessage.item_id);
                             await sendNewSellerMessageDB.SET(null);               
-                            contentScripts.pageRedirection(fixedData.workingUrls.home,'Link gone getting new one');
+                            contentScripts.pageRedirection(await fixedData.workingUrls.home(),'Link gone getting new one');
                             // await markAsLinkGone();
                         }else if(document.querySelector('form [name="message"]')){
                             const accountInfo = await contentScripts.accountInfo();
@@ -1588,7 +1595,7 @@ const contentScripts = {
                             removeLeadButton.onclick = async ()=>{
                                 await contentScripts.markItemAsLinkGone(sendNewSellerMessage.item_id);
                                 await sendNewSellerMessageDB.SET(null);               
-                                contentScripts.pageRedirection(fixedData.workingUrls.home,'Link gone getting new one');
+                                contentScripts.pageRedirection(await fixedData.workingUrls.home(),'Link gone getting new one');
                             };
                             consoleBoard.append(tryAgainButton,removeLeadButton);
                         }
@@ -1700,7 +1707,7 @@ const contentScripts = {
             }
             if(unseenMessageIds.length==0){
                 await workingStepDB.SET('prepareOutgoingMessage');
-                contentScripts.pageRedirection(fixedData.workingUrls.home,'start sending message');
+                contentScripts.pageRedirection(await fixedData.workingUrls.home(),'start sending message');
                 contentScripts.showDataOnConsole(`Unseen Messages: ${unseenMessageIds.length}`);
             }else{
                 await workingStepDB.SET('readUnseenMessage');
@@ -1832,7 +1839,7 @@ const contentScripts = {
             if(readUnseenMessage.length==0){
                 await workingStepDB.SET('prepareOutgoingMessage');
                 await readUnseenMessageDB.SET(null);
-                contentScripts.pageRedirection(fixedData.workingUrls.home,'start sending message');
+                contentScripts.pageRedirection(await fixedData.workingUrls.home(),'start sending message');
             }else{
                 contentScripts.pageRedirection(`${fixedData.workingUrls.unknownMessageSuffix}${readUnseenMessage[0]}`,`unseen message : ${readUnseenMessage[0]}`);
             }
@@ -1840,7 +1847,7 @@ const contentScripts = {
         if(readUnseenMessage.length==0){
             await workingStepDB.SET('prepareOutgoingMessage');
             await readUnseenMessageDB.SET(null);
-            contentScripts.pageRedirection(fixedData.workingUrls.home,'start sending message');
+            contentScripts.pageRedirection(await fixedData.workingUrls.home(),'start sending message');
         }else{
             if(window.location.href!=`${fixedData.workingUrls.unknownMessageSuffix}${readUnseenMessage[0]}`){
                 contentScripts.pageRedirection(`${fixedData.workingUrls.unknownMessageSuffix}${readUnseenMessage[0]}`,'Redirecting to message page');
@@ -1976,11 +1983,11 @@ const contentScripts = {
             if(sendUnsentMessage.length==0){
                 await workingStepDB.SET(null);
                 await sendUnsentMessageDB.SET(null);
-                contentScripts.pageRedirection(fixedData.workingUrls.home,'start sending new message');
+                contentScripts.pageRedirection(await fixedData.workingUrls.home(),'start sending new message');
             }else{
                 await sendUnsentMessageDB.SET(sendUnsentMessage);
                 const fb_post_id = sendUnsentMessage[0];
-                contentScripts.pageRedirection(fixedData.workingUrls.home,'Redirecting to seller message page');
+                contentScripts.pageRedirection(await fixedData.workingUrls.home(),'Redirecting to seller message page');
             }
         }
         if(sendUnsentMessage==null){
@@ -2011,7 +2018,7 @@ const contentScripts = {
                     contentScripts.showDataOnConsole('no second message to send');
                     await workingStepDB.SET(null);
                     await sendUnsentMessageDB.SET([]);
-                    contentScripts.pageRedirection(fixedData.workingUrls.home,'start sending new message');
+                    contentScripts.pageRedirection(await fixedData.workingUrls.home(),'start sending new message');
                 // }
                 
             }
@@ -2084,7 +2091,7 @@ const contentScripts = {
             console.log('redirecting to home to start sending new message');
             await workingStepDB.SET(null);
             await sendUnsentMessageDB.SET(null);
-            contentScripts.pageRedirection(fixedData.workingUrls.home,'start sending new message');
+            contentScripts.pageRedirection(await fixedData.workingUrls.home(),'start sending new message');
         }
     },
     messageCountEligible: async (input)=>{
@@ -2332,7 +2339,7 @@ const contentScripts = {
                     console.log('has unsent first message');
                     await sendOutgoingMessageDB.SET(hasUnsentFirstMessage);
                     await workingStepDB.SET('sendFirstMessage');
-                    await contentScripts.pageRedirection(fixedData.workingUrls.home,'will send first message now');
+                    await contentScripts.pageRedirection(await fixedData.workingUrls.home(),'will send first message now');
                     return true;
                 }else{
                     console.log('dont have unsent first message');
@@ -2369,7 +2376,7 @@ const contentScripts = {
                             console.log('initiated item messaging');
                             await sendOutgoingMessageDB.SET(initiateItemMessagingData);
                             await workingStepDB.SET('sendFirstMessage');
-                            await contentScripts.pageRedirection(fixedData.workingUrls.home,'will send first message now');
+                            await contentScripts.pageRedirection(await fixedData.workingUrls.home(),'will send first message now');
                             return true;
                         }else{
                             console.log('initiation failed!! Try again');
@@ -2383,7 +2390,7 @@ const contentScripts = {
                             console.log('has replies to send');
                             await sendOutgoingMessageDB.SET(hasRepliesToSend);
                             await workingStepDB.SET('sendReplyMessage');
-                            await contentScripts.pageRedirection(fixedData.workingUrls.home,'will send reply message now');
+                            await contentScripts.pageRedirection(await fixedData.workingUrls.home(),'will send reply message now');
                             return true;
                         }else{
                             console.log('dont have replies to send');
@@ -2398,13 +2405,13 @@ const contentScripts = {
                     console.log('has replies to send');
                     await sendOutgoingMessageDB.SET(hasRepliesToSend);
                     await workingStepDB.SET('sendReplyMessage');
-                    await contentScripts.pageRedirection(fixedData.workingUrls.home,'will send reply message now');
+                    await contentScripts.pageRedirection(await fixedData.workingUrls.home(),'will send reply message now');
                     return true;
                 }else{
                     console.log('dont have replies to send');
                     await contentScripts.waitWithVisual(360);
                     await workingStepDB.SET('collectUnseenMessage');
-                    await contentScripts.pageRedirection(fixedData.workingUrls.home,'will collect unseen message now');
+                    await contentScripts.pageRedirection(await fixedData.workingUrls.home(),'will collect unseen message now');
                     return false;
                 }
             }
@@ -2415,7 +2422,7 @@ const contentScripts = {
             console.log('dont have slot for sending message this hour');
             await contentScripts.waitWithVisual(600);
             await workingStepDB.SET('collectUnseenMessage');
-            await contentScripts.pageRedirection(fixedData.workingUrls.home,'will collect unseen message now');
+            await contentScripts.pageRedirection(await fixedData.workingUrls.home(),'will collect unseen message now');
             return false;
         }
     },
@@ -2432,16 +2439,16 @@ const contentScripts = {
         //     if(sendUnsentMessage.length==0){
         //         await workingStepDB.SET(null);
         //         await sendUnsentMessageDB.SET(null);
-        //         contentScripts.pageRedirection(fixedData.workingUrls.home,'start sending new message');
+        //         contentScripts.pageRedirection(await fixedData.workingUrls.home(),'start sending new message');
         //     }else{
         //         await sendUnsentMessageDB.SET(sendUnsentMessage);
         //         const fb_post_id = sendUnsentMessage[0];
-        //         contentScripts.pageRedirection(fixedData.workingUrls.home,'Redirecting to seller message page');
+        //         contentScripts.pageRedirection(await fixedData.workingUrls.home(),'Redirecting to seller message page');
         //     }
         // }
         if(sendOutgoingMessage==null){
             console.log('already sent message');
-            contentScripts.pageRedirection(fixedData.workingUrls.home,'already sent message');
+            contentScripts.pageRedirection(await fixedData.workingUrls.home(),'already sent message');
         }else if(sendOutgoingMessage.status){
             const fb_post_id = sendOutgoingMessage.fb_post_id;
             const item_id = sendOutgoingMessage.item_id;
@@ -2536,7 +2543,7 @@ const contentScripts = {
                         await contentScripts.markMessageAsSent(id);
                         await contentScripts.messageCounter(true);
                         await workingStepDB.SET('collectUnseenMessage');
-                        await contentScripts.pageRedirection(fixedData.workingUrls.home,'will collect unseen message now');
+                        await contentScripts.pageRedirection(await fixedData.workingUrls.home(),'will collect unseen message now');
                         return true;
                     }else{
                         console.log('sending message');
@@ -2555,7 +2562,7 @@ const contentScripts = {
                             await contentScripts.markItemMessagesdone(item_id);
                             console.log('found a message that is not valid, grabbing new one');
                             await workingStepDB.SET('prepareOutgoingMessage');
-                            contentScripts.pageRedirection(fixedData.workingUrls.home,'will grab another unsent message');
+                            contentScripts.pageRedirection(await fixedData.workingUrls.home(),'will grab another unsent message');
                             return false;
                         };
                         return true;
@@ -2566,7 +2573,7 @@ const contentScripts = {
                     await contentScripts.markItemMessagesdone(item_id);
                     console.log('found a message that is not valid, grabbing new one');
                     await workingStepDB.SET('prepareOutgoingMessage');
-                    contentScripts.pageRedirection(fixedData.workingUrls.home,'will grab another unsent message');
+                    contentScripts.pageRedirection(await fixedData.workingUrls.home(),'will grab another unsent message');
                     return false;
                 }
             }
@@ -2642,7 +2649,7 @@ const contentScripts = {
         //     console.log('redirecting to home to start sending new message');
         //     await workingStepDB.SET(null);
         //     await sendUnsentMessageDB.SET(null);
-        //     contentScripts.pageRedirection(fixedData.workingUrls.home,'start sending new message');
+        //     contentScripts.pageRedirection(await fixedData.workingUrls.home(),'start sending new message');
         // }
     },
     getTextFromImage: async({url,apiKey})=>{
@@ -2775,7 +2782,7 @@ const contentSetup = async()=>{
                 case null:
                     const workingStepDB = new ChromeStorage('workingStep');
                     await workingStepDB.SET('collectUnseenMessage');
-                    contentScripts.pageRedirection(fixedData.workingUrls.home,'start collecting unseen message');
+                    contentScripts.pageRedirection(await fixedData.workingUrls.home(),'start collecting unseen message');
 
                     // const hasRepliesToSend = await contentScripts.hasRepliesToSend();
                     // await contentScripts.waitWithVisual(isValidTimeToSendFirstMessage.waitingTime);
@@ -2790,7 +2797,7 @@ const contentSetup = async()=>{
                     //     if(!messageCountEligible.status){
                     //         contentScripts.showDataOnConsole('Message count Eligibility is in action');
                     //     }
-                    //     contentScripts.pageRedirection(fixedData.workingUrls.home,'start collecting unseen message');
+                    //     contentScripts.pageRedirection(await fixedData.workingUrls.home(),'start collecting unseen message');
                     // }
                 break;
                 case 'collectUnseenMessage':
@@ -2815,7 +2822,7 @@ const contentSetup = async()=>{
                 //         if(!messageCountEligible.status){
                 //             contentScripts.showDataOnConsole('Message count Eligibility is in action');
                 //         }
-                //         contentScripts.pageRedirection(fixedData.workingUrls.home,'start sending new message');
+                //         contentScripts.pageRedirection(await fixedData.workingUrls.home(),'start sending new message');
                 //     }
                 break;
                 default:
