@@ -423,7 +423,7 @@ const fixedData = {
         home: async()=>{
             const metaInformationDB = new ChromeStorage('metaInformation');
             const metaInformation = await metaInformationDB.GET();
-            const homeUrls = inputString.split(',');
+            const homeUrls = metaInformation.homeUrl.split(',');
             const randomIndex = Math.floor(Math.random() * homeUrls.length);
             const homeUrl = homeUrls[randomIndex];
             return homeUrl;
@@ -464,6 +464,7 @@ const fixedData = {
     limits:{
         loadMessages: 10,
         soldButValidAsSellerMessageCount: 2,
+        minimumTimeDifferenceOfReadingMessage: 15*60*1000,
         // lastUnreadMesaage: (86400*3),
     },
     mondayFetch:{
@@ -1826,10 +1827,20 @@ const contentScripts = {
         }
         return vin;
     },
+    isValidTimeToReadMessage: async()=>{
+        const lastMessageReadingTimeDB = new ChromeStorage('lastMessageReadingTime');
+        const lastMessageReadingTime = await lastMessageReadingTimeDB.GET() || 0;
+        const minimumTimeDifference = fixedData.limits.minimumTimeDifferenceOfReadingMessage;
+
+    },
     readUnseenMessage: async ()=>{
         const workingStepDB = new ChromeStorage('workingStep');
         const readUnseenMessageDB = new ChromeStorage('readUnseenMessage');
         const readUnseenMessage = await readUnseenMessageDB.GET();
+
+        
+
+
         const afterReadingMessage = async ()=>{
             readUnseenMessage.shift();
             await readUnseenMessageDB.SET(readUnseenMessage);
