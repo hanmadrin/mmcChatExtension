@@ -423,7 +423,10 @@ const fixedData = {
         home: async()=>{
             const metaInformationDB = new ChromeStorage('metaInformation');
             const metaInformation = await metaInformationDB.GET();
-            return metaInformation.homeUrl
+            const homeUrls = inputString.split(',');
+            const randomIndex = Math.floor(Math.random() * homeUrls.length);
+            const homeUrl = homeUrls[randomIndex];
+            return homeUrl;
         },
         itemSuffix: `https://${fbSubDom}.facebook.com/marketplace/item/`,
         unknownMessageSuffix: `https://${fbSubDom}.facebook.com/messages/read/?tid=cid.g.`,
