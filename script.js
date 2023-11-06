@@ -1660,6 +1660,12 @@ const contentScripts = {
         
 
     },
+    isValidTimeToReadMessage: async()=>{
+        const lastMessageReadingTimeDB = new ChromeStorage('lastMessageReadingTime');
+        const lastMessageReadingTime = await lastMessageReadingTimeDB.GET() || 0;
+        const minimumTimeDifference = fixedData.limits.minimumTimeDifferenceOfReadingMessage;
+        
+    },
     collectUnseenMessage: async()=>{
         const workingStepDB = new ChromeStorage('workingStep');
         const metaInformationDB = new ChromeStorage('metaInformation');
@@ -1827,12 +1833,7 @@ const contentScripts = {
         }
         return vin;
     },
-    isValidTimeToReadMessage: async()=>{
-        const lastMessageReadingTimeDB = new ChromeStorage('lastMessageReadingTime');
-        const lastMessageReadingTime = await lastMessageReadingTimeDB.GET() || 0;
-        const minimumTimeDifference = fixedData.limits.minimumTimeDifferenceOfReadingMessage;
 
-    },
     readUnseenMessage: async ()=>{
         const workingStepDB = new ChromeStorage('workingStep');
         const readUnseenMessageDB = new ChromeStorage('readUnseenMessage');
@@ -2661,6 +2662,7 @@ const contentScripts = {
         // }
     },
     getTextFromImage: async({url,apiKey})=>{
+        return '';
         const base64EncodedImageFromUrl = async (url) => {
             const response = await fetch(url);
             const blob = await response.blob();
