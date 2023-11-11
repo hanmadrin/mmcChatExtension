@@ -1336,10 +1336,12 @@ const contentScripts = {
             }
             else{
                 contentScripts.showDataOnConsole('No raw Item to work With');
-                await contentScripts.waitWithVisual(60*5);
                 await sendNewSellerMessageDB.SET(null);
-                await workingStepDB.SET('collectUnseenMessage');               
-                contentScripts.pageRedirection(fixedData.workingUrls.messages,'No raw Item to work With');
+                await contentScripts.dynamicWaitingBeforeCollecingMessage(true);
+                // CHANGED BELOW
+                // await contentScripts.waitWithVisual(60*5);
+                // await workingStepDB.SET('collectUnseenMessage');               
+                // contentScripts.pageRedirection(fixedData.workingUrls.messages,'No raw Item to work With');
             }
         }else{
             if(sendNewSellerMessage.fb_post_id){
@@ -1660,13 +1662,14 @@ const contentScripts = {
         
 
     },
-    isValidTimeToReadMessage: async()=>{
-        const lastMessageReadingTimeDB = new ChromeStorage('lastMessageReadingTime');
-        const lastMessageReadingTime = await lastMessageReadingTimeDB.GET() || 0;
-        const minimumTimeDifference = fixedData.limits.minimumTimeDifferenceOfReadingMessage;
+    // isValidTimeToReadMessage: async()=>{
+    //     const lastMessageReadingTimeDB = new ChromeStorage('lastMessageReadingTime');
+    //     const lastMessageReadingTime = await lastMessageReadingTimeDB.GET() || 0;
+    //     const minimumTimeDifference = fixedData.limits.minimumTimeDifferenceOfReadingMessage;
         
-    },
+    // },
     collectUnseenMessage: async()=>{
+        await contentScripts.collectMessageWaitingTimeControl(true);
         const workingStepDB = new ChromeStorage('workingStep');
         const metaInformationDB = new ChromeStorage('metaInformation');
         if(window.location.href==fixedData.workingUrls.messages){
@@ -1710,6 +1713,7 @@ const contentScripts = {
                 }
             }
             if(unseenMessageIds.length==0){
+                
                 await workingStepDB.SET('prepareOutgoingMessage');
                 contentScripts.pageRedirection(await fixedData.workingUrls.home(),'start sending message');
                 contentScripts.showDataOnConsole(`Unseen Messages: ${unseenMessageIds.length}`);
@@ -1979,130 +1983,130 @@ const contentScripts = {
             }
         }
     },
-    sendUnsentMessage: async ()=>{
-        // Sorry, something went wrong.
-        const workingStepDB = new ChromeStorage('workingStep');
-        const metaInformationDB = new ChromeStorage('metaInformation');
-        const sendUnsentMessageDB = new ChromeStorage('sendUnsentMessage');
-        let sendUnsentMessage = await sendUnsentMessageDB.GET();
-        const metaInfromation = await metaInformationDB.GET();
-        // const fb_id = (await contentScripts.accountInfo()).id;
-        const afterSendingMessage = async ()=>{
-            sendUnsentMessage.shift();
-            if(sendUnsentMessage.length==0){
-                await workingStepDB.SET(null);
-                await sendUnsentMessageDB.SET(null);
-                contentScripts.pageRedirection(await fixedData.workingUrls.home(),'start sending new message');
-            }else{
-                await sendUnsentMessageDB.SET(sendUnsentMessage);
-                const fb_post_id = sendUnsentMessage[0];
-                contentScripts.pageRedirection(await fixedData.workingUrls.home(),'Redirecting to seller message page');
-            }
-        }
-        if(sendUnsentMessage==null){
-            const hasRepliesToSend = await contentScripts.hasRepliesToSend();
-            console.log(hasRepliesToSend);
-            if(hasRepliesToSend.status){
-                contentScripts.showDataOnConsole('has replies to send');
-                sendUnsentMessage = await contentScripts.getUnsentMessagePostIds();
-                // console.log('unsent message post ids',sendUnsentMessage);
-                // console.log(sendUnsentMessage);
-                // console.log(`item_id: ${hasRepliesToSend.item_id}`);
-                // const fb_post_id = await contentScripts.postIdByItemId(hasRepliesToSend.item_id);
-                // console.log(`fb_post_id: ${fb_post_id}`);
-                // sendUnsentMessage =[fb_post_id];
-                // console.log(`postIds to send: ${sendUnsentMessage}`);
-                await sendUnsentMessageDB.SET(sendUnsentMessage);
-            }else{
-                // contentScripts.showDataOnConsole('no replies but checking for second message');
-                // const hasSecondMessageToSend = await contentScripts.hasSecondMessageToSend();
-                // if(hasSecondMessageToSend.status){
-                //     contentScripts.showDataOnConsole('has second message to send');
-                //     await contentScripts.setSecondMessage(hasSecondMessageToSend.item_id);
-                //     await contentScripts.markItemAsSecondMessage(hasSecondMessageToSend.item_id);
-                //     const fb_post_id = await contentScripts.postIdByItemId(hasSecondMessageToSend.item_id);
-                //     sendUnsentMessage = [fb_post_id];
-                //     await sendUnsentMessageDB.SET(sendUnsentMessage);
-                // }else{
-                    contentScripts.showDataOnConsole('no second message to send');
-                    await workingStepDB.SET(null);
-                    await sendUnsentMessageDB.SET([]);
-                    contentScripts.pageRedirection(await fixedData.workingUrls.home(),'start sending new message');
-                // }
+    // sendUnsentMessage: async ()=>{
+    //     // Sorry, something went wrong.
+    //     const workingStepDB = new ChromeStorage('workingStep');
+    //     const metaInformationDB = new ChromeStorage('metaInformation');
+    //     const sendUnsentMessageDB = new ChromeStorage('sendUnsentMessage');
+    //     let sendUnsentMessage = await sendUnsentMessageDB.GET();
+    //     const metaInfromation = await metaInformationDB.GET();
+    //     // const fb_id = (await contentScripts.accountInfo()).id;
+    //     const afterSendingMessage = async ()=>{
+    //         sendUnsentMessage.shift();
+    //         if(sendUnsentMessage.length==0){
+    //             await workingStepDB.SET(null);
+    //             await sendUnsentMessageDB.SET(null);
+    //             contentScripts.pageRedirection(await fixedData.workingUrls.home(),'start sending new message');
+    //         }else{
+    //             await sendUnsentMessageDB.SET(sendUnsentMessage);
+    //             const fb_post_id = sendUnsentMessage[0];
+    //             contentScripts.pageRedirection(await fixedData.workingUrls.home(),'Redirecting to seller message page');
+    //         }
+    //     }
+    //     if(sendUnsentMessage==null){
+    //         const hasRepliesToSend = await contentScripts.hasRepliesToSend();
+    //         console.log(hasRepliesToSend);
+    //         if(hasRepliesToSend.status){
+    //             contentScripts.showDataOnConsole('has replies to send');
+    //             sendUnsentMessage = await contentScripts.getUnsentMessagePostIds();
+    //             // console.log('unsent message post ids',sendUnsentMessage);
+    //             // console.log(sendUnsentMessage);
+    //             // console.log(`item_id: ${hasRepliesToSend.item_id}`);
+    //             // const fb_post_id = await contentScripts.postIdByItemId(hasRepliesToSend.item_id);
+    //             // console.log(`fb_post_id: ${fb_post_id}`);
+    //             // sendUnsentMessage =[fb_post_id];
+    //             // console.log(`postIds to send: ${sendUnsentMessage}`);
+    //             await sendUnsentMessageDB.SET(sendUnsentMessage);
+    //         }else{
+    //             // contentScripts.showDataOnConsole('no replies but checking for second message');
+    //             // const hasSecondMessageToSend = await contentScripts.hasSecondMessageToSend();
+    //             // if(hasSecondMessageToSend.status){
+    //             //     contentScripts.showDataOnConsole('has second message to send');
+    //             //     await contentScripts.setSecondMessage(hasSecondMessageToSend.item_id);
+    //             //     await contentScripts.markItemAsSecondMessage(hasSecondMessageToSend.item_id);
+    //             //     const fb_post_id = await contentScripts.postIdByItemId(hasSecondMessageToSend.item_id);
+    //             //     sendUnsentMessage = [fb_post_id];
+    //             //     await sendUnsentMessageDB.SET(sendUnsentMessage);
+    //             // }else{
+    //                 contentScripts.showDataOnConsole('no second message to send');
+    //                 await workingStepDB.SET(null);
+    //                 await sendUnsentMessageDB.SET([]);
+    //                 contentScripts.pageRedirection(await fixedData.workingUrls.home(),'start sending new message');
+    //             // }
                 
-            }
-        }
-        if(sendUnsentMessage.length!=0){
-            const fb_post_id = sendUnsentMessage[0];
-            if(window.location.href!=`${fixedData.workingUrls.sellerMessageSuffix}${fb_post_id}/`){
-                if(fb_post_id==null){
-                    await afterSendingMessage();
-                }else{
-                    contentScripts.pageRedirection(`${fixedData.workingUrls.sellerMessageSuffix}${fb_post_id}/`,'Redirecting to seller message page');
-                }
-            }else{
-                const validTosendMessage = await contentScripts.isValidMessageInSellerMessage(fb_post_id);
-                if(validTosendMessage){
-                    const messages = await contentScripts.getUnsentMessagesByPostId(fb_post_id);
-                    if(messages.length!=0){
-                        await essentials.sleep(5000);
-                        for(let i=0;i<messages.length;i++){
-                            const messageData = messages[i];
-                            if(messageData==null){
-                                await afterSendingMessage();
-                            }else{
-                                const message = messageData.message;
-                                const all_content = document.body.innerText.replace(/[^a-zA-Z0-9]/g,'');
-                                const message_content = message.replace(/[^a-zA-Z0-9]/g,'');
-                                if(all_content.includes(message_content)){
-                                    await contentScripts.markMessageAsSent(messageData.id); 
-                                    await contentScripts.updateFirstMessageTime();
-                                    await contentScripts.messageCountEligible(true);
-                                    if(i==messages.length-1){
-                                        // updateFirstMessageTime
-                                        await afterSendingMessage();
-                                    }
-                                }else{
-                                    await essentials.sleep(5000);
-                                    const messageInput = document.querySelector(fixedData.workingSelectors.sendUnsentMessage.messageInput);
-                                    messageInput.value = message;
-                                    const sendButton = document.querySelector(fixedData.workingSelectors.sendUnsentMessage.sendButton);
-                                    sendButton.click();
-                                    const consoleBoard = document.getElementById(fixedData.workingSelectors.content.console);
-                                    const markAsLinkGoneButton = document.createElement('button');
-                                    markAsLinkGoneButton.innerText = 'Mark as link gone';
-                                    consoleBoard.append(markAsLinkGoneButton);
-                                    markAsLinkGoneButton.onclick = async ()=>{
-                                        const item_id = await contentScripts.itemIdByPostId(fb_post_id);
-                                        await contentScripts.markItemAsLinkGone(item_id);
-                                        await contentScripts.markItemMessagesdone(item_id);
-                                        await afterSendingMessage();
-                                    };
-                                    break;
-                                }
-                            }
-                        }
-                        contentScripts.showDataOnConsole('program should not be stucked here');
-                    }else{
-                        await afterSendingMessage();
-                    }
+    //         }
+    //     }
+    //     if(sendUnsentMessage.length!=0){
+    //         const fb_post_id = sendUnsentMessage[0];
+    //         if(window.location.href!=`${fixedData.workingUrls.sellerMessageSuffix}${fb_post_id}/`){
+    //             if(fb_post_id==null){
+    //                 await afterSendingMessage();
+    //             }else{
+    //                 contentScripts.pageRedirection(`${fixedData.workingUrls.sellerMessageSuffix}${fb_post_id}/`,'Redirecting to seller message page');
+    //             }
+    //         }else{
+    //             const validTosendMessage = await contentScripts.isValidMessageInSellerMessage(fb_post_id);
+    //             if(validTosendMessage){
+    //                 const messages = await contentScripts.getUnsentMessagesByPostId(fb_post_id);
+    //                 if(messages.length!=0){
+    //                     await essentials.sleep(5000);
+    //                     for(let i=0;i<messages.length;i++){
+    //                         const messageData = messages[i];
+    //                         if(messageData==null){
+    //                             await afterSendingMessage();
+    //                         }else{
+    //                             const message = messageData.message;
+    //                             const all_content = document.body.innerText.replace(/[^a-zA-Z0-9]/g,'');
+    //                             const message_content = message.replace(/[^a-zA-Z0-9]/g,'');
+    //                             if(all_content.includes(message_content)){
+    //                                 await contentScripts.markMessageAsSent(messageData.id); 
+    //                                 await contentScripts.updateFirstMessageTime();
+    //                                 await contentScripts.messageCountEligible(true);
+    //                                 if(i==messages.length-1){
+    //                                     // updateFirstMessageTime
+    //                                     await afterSendingMessage();
+    //                                 }
+    //                             }else{
+    //                                 await essentials.sleep(5000);
+    //                                 const messageInput = document.querySelector(fixedData.workingSelectors.sendUnsentMessage.messageInput);
+    //                                 messageInput.value = message;
+    //                                 const sendButton = document.querySelector(fixedData.workingSelectors.sendUnsentMessage.sendButton);
+    //                                 sendButton.click();
+    //                                 const consoleBoard = document.getElementById(fixedData.workingSelectors.content.console);
+    //                                 const markAsLinkGoneButton = document.createElement('button');
+    //                                 markAsLinkGoneButton.innerText = 'Mark as link gone';
+    //                                 consoleBoard.append(markAsLinkGoneButton);
+    //                                 markAsLinkGoneButton.onclick = async ()=>{
+    //                                     const item_id = await contentScripts.itemIdByPostId(fb_post_id);
+    //                                     await contentScripts.markItemAsLinkGone(item_id);
+    //                                     await contentScripts.markItemMessagesdone(item_id);
+    //                                     await afterSendingMessage();
+    //                                 };
+    //                                 break;
+    //                             }
+    //                         }
+    //                     }
+    //                     contentScripts.showDataOnConsole('program should not be stucked here');
+    //                 }else{
+    //                     await afterSendingMessage();
+    //                 }
                     
-                }else{
-                    const item_id = await contentScripts.itemIdByPostId(fb_post_id);
-                    await contentScripts.markItemAsLinkGone(item_id);
-                    await contentScripts.markItemMessagesdone(item_id);
-                    await afterSendingMessage();
-                }
+    //             }else{
+    //                 const item_id = await contentScripts.itemIdByPostId(fb_post_id);
+    //                 await contentScripts.markItemAsLinkGone(item_id);
+    //                 await contentScripts.markItemMessagesdone(item_id);
+    //                 await afterSendingMessage();
+    //             }
                 
-            }
+    //         }
 
-        }else{
-            console.log('redirecting to home to start sending new message');
-            await workingStepDB.SET(null);
-            await sendUnsentMessageDB.SET(null);
-            contentScripts.pageRedirection(await fixedData.workingUrls.home(),'start sending new message');
-        }
-    },
+    //     }else{
+    //         console.log('redirecting to home to start sending new message');
+    //         await workingStepDB.SET(null);
+    //         await sendUnsentMessageDB.SET(null);
+    //         contentScripts.pageRedirection(await fixedData.workingUrls.home(),'start sending new message');
+    //     }
+    // },
     messageCountEligible: async (input)=>{
         const workingStepDB = new ChromeStorage('workingStep');
         const messageCountDB = new ChromeStorage('messageCount');
@@ -2320,6 +2324,7 @@ const contentScripts = {
         console.log('preparing outgoing message');
         const timeController = await contentScripts.programTimeController();
         if(timeController.status){
+            // await contentScripts.dynamicWaitingBeforeCollecingMessage();
             await contentScripts.waitWithVisual(timeController.waitingTime);
         }else{
             console.log('program is not running');
@@ -2403,8 +2408,9 @@ const contentScripts = {
                             return true;
                         }else{
                             console.log('dont have replies to send');
-                            await contentScripts.waitWithVisual(600);
-                            return false;
+                            await contentScripts.dynamicWaitingBeforeCollecingMessage(true);
+                            // await contentScripts.waitWithVisual(600);
+                            // return false;
                         }
                     }
                 }
@@ -2429,11 +2435,58 @@ const contentScripts = {
             console.log(localCount);
             console.log(typeof(serverCount.total), typeof(localCount.total));
             console.log('dont have slot for sending message this hour');
-            await contentScripts.waitWithVisual(600);
-            await workingStepDB.SET('collectUnseenMessage');
-            await contentScripts.pageRedirection(await fixedData.workingUrls.home(),'will collect unseen message now');
-            return false;
+            await contentScripts.dynamicWaitingBeforeCollecingMessage(true); 
+            // await contentScripts.waitWithVisual(600);
+            // await workingStepDB.SET('collectUnseenMessage');
+            // await contentScripts.pageRedirection(await fixedData.workingUrls.home(),'will collect unseen message now');
+            // return false;
         }
+    },
+    collectMessageWaitingTimeControl : async (input)=>{
+        const lastMessageReadingTimeDB = new ChromeStorage('lastMessageReadingTime');
+        const readMessageMinimumDifference = 15*60*1000;
+        const lastMessageReadingTime = await lastMessageReadingTimeDB.GET() ||0;
+        const currentTime = new Date().getTime();
+        console.log(`collect lastMessageReadingTime: ${lastMessageReadingTime}`);
+        const timeDifference = currentTime - lastMessageReadingTime;
+        console.log(`collect timeDifference: ${timeDifference/1000/60}`)
+        if(input){
+            await lastMessageReadingTimeDB.SET(currentTime);
+            return 0;
+        }
+        return (readMessageMinimumDifference-timeDifference)/1000;
+    },
+    dynamicWaitingBeforeCollecingMessage: async(strict)=>{
+        console.log('working inside dynamicWaitingBeforeCollecingMessage');
+        console.log('strict',strict);
+        const workingStepDB = new ChromeStorage('workingStep');
+        // const workingStep = await workingStepDB.GET();
+        const sendingMessageTime = await contentScripts.programTimeController();
+        const collectingMessageTime = await contentScripts.collectMessageWaitingTimeControl();
+        if(sendingMessageTime.status && !strict){
+            if(sendingMessageTime.waitingTime<collectingMessageTime.waitingTime){
+                console.log('waiting for preparing message');
+                await contentScripts.waitWithVisual(sendingMessageTime.waitingTime);
+                await workingStepDB.SET('prepareOutgoingMessage');
+                await contentScripts.prepareOutgoingMessage();
+                return;
+            }
+        }
+
+
+        console.log('waiting for collecting message');
+        if(window.location.href.includes('https://m.facebook.com/marketplace/message_seller/')){
+            window.history.pushState({},'','/bookmarks');
+            window.history.pushState({},'','/bookmarks');
+            window.history.back();
+        }
+        await contentScripts.waitWithVisual(collectingMessageTime);
+        await workingStepDB.SET('collectUnseenMessage');
+        await contentScripts.collectUnseenMessage();
+        return;
+        
+
+
     },
     sendOutgoingMessage: async()=>{
         const workingStepDB = new ChromeStorage('workingStep');
@@ -2551,9 +2604,10 @@ const contentScripts = {
                         }
                         await contentScripts.markMessageAsSent(id);
                         await contentScripts.messageCounter(true);
-                        await workingStepDB.SET('collectUnseenMessage');
-                        await contentScripts.pageRedirection(await fixedData.workingUrls.home(),'will collect unseen message now');
-                        return true;
+                        await contentScripts.dynamicWaitingBeforeCollecingMessage(false);
+                        // await workingStepDB.SET('collectUnseenMessage');
+                        // await contentScripts.pageRedirection(await fixedData.workingUrls.home(),'will collect unseen message now');
+                        // return true;
                     }else{
                         console.log('sending message');
                         await essentials.sleep(5000);
@@ -2662,7 +2716,7 @@ const contentScripts = {
         // }
     },
     getTextFromImage: async({url,apiKey})=>{
-        return '';
+        // return '';
         const base64EncodedImageFromUrl = async (url) => {
             const response = await fetch(url);
             const blob = await response.blob();
@@ -2791,8 +2845,10 @@ const contentSetup = async()=>{
                 case undefined:
                 case null:
                     const workingStepDB = new ChromeStorage('workingStep');
-                    await workingStepDB.SET('collectUnseenMessage');
-                    contentScripts.pageRedirection(await fixedData.workingUrls.home(),'start collecting unseen message');
+                    await contentScripts.dynamicWaitingBeforeCollecingMessage(false);
+
+                    // await workingStepDB.SET('collectUnseenMessage');
+                    // contentScripts.pageRedirection(await fixedData.workingUrls.home(),'start collecting unseen message');
 
                     // const hasRepliesToSend = await contentScripts.hasRepliesToSend();
                     // await contentScripts.waitWithVisual(isValidTimeToSendFirstMessage.waitingTime);
