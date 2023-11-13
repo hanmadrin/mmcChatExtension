@@ -2463,8 +2463,9 @@ const contentScripts = {
         // const workingStep = await workingStepDB.GET();
         const sendingMessageTime = await contentScripts.programTimeController();
         const collectingMessageTime = await contentScripts.collectMessageWaitingTimeControl();
+        // console.log(``)
         if(sendingMessageTime.status && !strict){
-            if(sendingMessageTime.waitingTime<collectingMessageTime.waitingTime){
+            if(sendingMessageTime.waitingTime<collectingMessageTime){
                 console.log('waiting for preparing message');
                 await contentScripts.waitWithVisual(sendingMessageTime.waitingTime);
                 await workingStepDB.SET('prepareOutgoingMessage');
