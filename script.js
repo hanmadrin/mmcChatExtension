@@ -2466,6 +2466,11 @@ const contentScripts = {
         // console.log(``)
         if(sendingMessageTime.status && !strict){
             if(sendingMessageTime.waitingTime<collectingMessageTime){
+                if(window.location.href.includes('https://m.facebook.com/marketplace/message_seller/')){
+                    window.history.pushState({},'','/bookmarks');
+                    window.history.pushState({},'','/bookmarks');
+                    window.history.back();
+                }
                 console.log('waiting for preparing message');
                 await contentScripts.waitWithVisual(sendingMessageTime.waitingTime);
                 await workingStepDB.SET('prepareOutgoingMessage');
