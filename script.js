@@ -2640,6 +2640,7 @@ const contentScripts = {
                                 autoRetryCount++;
                                 sendOutgoingMessage.autoRetryCount = autoRetryCount;
                                 await sendOutgoingMessageDB.SET(sendOutgoingMessage);
+                                await essentials.sleep(10000);
                                 window.location.reload();
                             }else{
                                 const consoleBoard = document.getElementById(fixedData.workingSelectors.content.console);
