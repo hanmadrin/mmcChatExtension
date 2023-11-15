@@ -2634,7 +2634,36 @@ const contentScripts = {
                             contentScripts.pageRedirection(await fixedData.workingUrls.home(),'will grab another unsent message');
                             return false;
                         };
-                        return true;
+                        await (async ()=>{
+                            let autoRetryCount = sendOutgoingMessage.autoRetryCount || 0;
+                            if(autoRetryCount<2){
+                                autoRetryCount++;
+                                sendOutgoingMessage.autoRetryCount = autoRetryCount;
+                                await sendOutgoingMessageDB.SET(sendOutgoingMessage);
+                                window.location.reload();
+                            }else{
+                                const consoleBoard = document.getElementById(fixedData.workingSelectors.content.console);
+                                consoleBoard.style.backgroundColor = 'red';
+                                const manualRetryButton = document.createElement('button');
+                                manualRetryButton.innerText = 'Manual Retry Sending Message';
+                                consoleBoard.append(manualRetryButton);
+                            }
+                        })();
+                        contentScripts.showDataOnConsole('waiting 20 seconds for message to go through');
+                        await essentials.sleep(20000);
+                        await (async ()=>{
+                            let forceRefreshCount = sendOutgoingMessage.forceRefreshCount || 0;
+                            if(retryCount<2){
+                                forceRefreshCount++;
+                                sendOutgoingMessage.forceRefreshCount = forceRefreshCount;
+                                await sendOutgoingMessageDB.SET(sendOutgoingMessage);
+                                window.location.reload();
+                            }else{
+                                const consoleBoard = document.getElementById(fixedData.workingSelectors.content.console);
+                                consoleBoard.style.backgroundColor = 'red';
+                            }
+                        })();
+
                     }
                 }else{
                     console.log('marking as link gone');
