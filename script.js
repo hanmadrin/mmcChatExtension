@@ -2462,7 +2462,7 @@ const contentScripts = {
         const workingStepDB = new ChromeStorage('workingStep');
         // const workingStep = await workingStepDB.GET();
         const sendingMessageTime = await contentScripts.programTimeController();
-        const collectingMessageTime = await contentScripts.collectMessageWaitingTimeControl();
+        let collectingMessageTime = await contentScripts.collectMessageWaitingTimeControl();
         // console.log(``)
         if(sendingMessageTime.status && !strict){
             if(sendingMessageTime.waitingTime<collectingMessageTime){
@@ -2486,6 +2486,8 @@ const contentScripts = {
             window.history.pushState({},'','/bookmarks');
             window.history.back();
         }
+        // 50% randomness less time
+        collectingMessageTime = collectingMessageTime - collectingMessageTime/2 + Math.random()*collectingMessageTime/2;
         await contentScripts.waitWithVisual(collectingMessageTime);
         await workingStepDB.SET('collectUnseenMessage');
         await contentScripts.collectUnseenMessage();
