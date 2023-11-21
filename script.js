@@ -2444,6 +2444,9 @@ const contentScripts = {
     },
     collectMessageWaitingTimeControl : async (input)=>{
         const lastMessageReadingTimeDB = new ChromeStorage('lastMessageReadingTime');
+        const currentHourReadingLimitDB = new ChromeStorage('currentHourReadingLimit');
+        const currentHourReadingLimit = await currentHourReadingLimitDB.GET();
+
         const readMessageMinimumDifference = 15*60*1000;
         const lastMessageReadingTime = await lastMessageReadingTimeDB.GET() ||0;
         const currentTime = new Date().getTime();
@@ -2486,8 +2489,10 @@ const contentScripts = {
             window.history.pushState({},'','/bookmarks');
             window.history.back();
         }
-        // 50% randomness less time
+        // 50% randomness less time to 100% more time
+        console.log(`collectingMessageTime: ${collectingMessageTime}`);
         collectingMessageTime = collectingMessageTime - collectingMessageTime/2 + Math.random()*collectingMessageTime/2;
+        console.log(`collectingMessageTime with randomness: ${collectingMessageTime}`);
         await contentScripts.waitWithVisual(collectingMessageTime);
         await workingStepDB.SET('collectUnseenMessage');
         await contentScripts.collectUnseenMessage();
@@ -2642,7 +2647,7 @@ const contentScripts = {
                                 autoRetryCount++;
                                 sendOutgoingMessage.autoRetryCount = autoRetryCount;
                                 await sendOutgoingMessageDB.SET(sendOutgoingMessage);
-                                await essentials.sleep(10000);
+                                await essentials.sleep(60000);
                                 window.location.reload();
                             }else{
                                 const consoleBoard = document.getElementById(fixedData.workingSelectors.content.console);
