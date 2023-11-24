@@ -2521,6 +2521,7 @@ const contentScripts = {
         //         contentScripts.pageRedirection(await fixedData.workingUrls.home(),'Redirecting to seller message page');
         //     }
         // }
+        await essentials.sleep(10000);
         if(sendOutgoingMessage==null){
             console.log('already sent message');
             contentScripts.pageRedirection(await fixedData.workingUrls.home(),'already sent message');
